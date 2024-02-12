@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,35 @@ class LoginState extends State<Login> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
   late String works;
+
+  Future<bool> workerExists(user) async {
+    return await FirebaseFirestore.instance
+        .collection("Worker")
+        .where("worker_id", isEqualTo: user.uid)
+        .get()
+        .then((value) => value.size > 0 ? true : false);
+  }
+
+  Future<void> addWorkerDb(user) async {
+    bool workerRes = await workerExists(user);
+    if (workerRes == true) {
+      print("worker already in database");
+    } else {
+      DateTime bday = DateTime(2000, 1, 1);
+      Map<String, dynamic> worker = {
+        "worker_id": user.uid,
+        "name": user.displayName.toString(),
+        "email": user.email.toString(),
+        "bday": bday.toIso8601String(),
+        "location": "Portsmouth".toString(),
+      };
+      dbhandler.child("Worker").push().set(worker).then((value) {
+        Navigator.of(context).pop();
+      }).catchError((error) {
+        print("Error saving to Firebase: $error");
+      });
+    }
+  }
 
   Future<User?> _handleSignIn() async {
     try {
@@ -55,41 +85,18 @@ class LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Google Sign-In with Firebase"),
+        title: Text("Google Login"),
       ),
       body: Center(
         child: ElevatedButton(
           onPressed: () async {
-            DateTime bday = DateTime(2000, 1, 1);
             User? user = await _handleSignIn();
             if (user != null) {
               print('correct');
-              Map<String, dynamic> worker = {
-                "name": user.displayName.toString(),
-                "email": user.email.toString(),
-                "bday": bday.toIso8601String(),
-                "location": "Portsmouth".toString(),
-              };
-
-              dbhandler.child("Worker").push().set(worker).then((value) {
-                Navigator.of(context).pop();
-              }).catchError((error) {
-                print("Error saving to Firebase: $error");
-              });
+              addWorkerDb(user);
             } else {
               print('failed');
-              // Map<String, dynamic> worker = {
-              //   "name": user?.displayName.toString(),
-              //   "email": user?.email.toString(),
-              //   "bday": bday.toIso8601String(),
-              //   "location": "Portsmouth".toString(),
-              // };
-
-              // dbhandler.child("Worker").push().set(worker).then((value) {
-              //   Navigator.of(context).pop();
-              // }).catchError((error) {
-              //   print("Error saving to Firebase: $error");
-              // });
+              // TO DO SORT FAILED GOOGLE
             }
           },
           child: const Text("Sign in with Google"),

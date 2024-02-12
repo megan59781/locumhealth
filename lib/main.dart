@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:trial/pages/login.dart';
+import 'package:fyp/pages/login.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: Login(),//const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: Login(), //const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
