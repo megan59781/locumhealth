@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fyp/templates/googleBut.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 //Firebase.auth.signOut()
@@ -87,19 +87,40 @@ class LoginState extends State<Login> {
       appBar: AppBar(
         title: Text("Google Login"),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            User? user = await _handleSignIn();
-            if (user != null) {
-              print('correct');
-              addWorkerDb(user);
-            } else {
-              print('failed');
-              // TO DO SORT FAILED GOOGLE
-            }
-          },
-          child: const Text("Sign in with Google"),
+      body: SafeArea(
+        child: Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const SizedBox(height: 50),
+            GoogleButton(
+              buttonSize: 125,
+              onPress: () async {
+                User? user = await _handleSignIn();
+                if (user != null) {
+                  print('correct');
+                  //addWorkerDb(user);
+                } else {
+                  print('failed');
+                  // TO DO SORT FAILED GOOGLE
+                }
+              },
+            ),
+            const SizedBox(height: 50),
+            const SizedBox(height: 50),
+            GoogleButton(
+              buttonSize: 125,
+              onPress: () async {
+                User? user = await _handleSignIn();
+                if (user != null) {
+                  print('correct');
+                  addWorkerDb(user);
+                } else {
+                  print('failed');
+                  // TO DO SORT FAILED GOOGLE
+                }
+              },
+            ),
+            const SizedBox(height: 50),
+          ]),
         ),
       ),
     );
