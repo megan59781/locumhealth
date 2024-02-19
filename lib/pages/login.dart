@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/googleBut.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 
-//Firebase.auth.signOut()
+//FirebaseAuth.instance.signOut()
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -63,20 +64,9 @@ class LoginState extends State<Login> {
       UserCredential authResult = await _auth.signInWithCredential(credential);
       User? user = authResult.user;
 
-      print("Signed in: ${user!.displayName}");
-
-      // Fetch additional user details
-      String? userEmail = user.email;
-      String? userName = user.displayName;
-
-      //Image userImg = user.photoURL! as Image;
-
-      print("Email: $userEmail");
-      print("First Name: $userName");
-
       return user;
     } catch (error) {
-      print(error);
+      //print(error);
       return null;
     }
   }
@@ -84,12 +74,13 @@ class LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Google Login"),
-      ),
+      backgroundColor: Colors.brown[100],
       body: SafeArea(
         child: Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const SizedBox(height: 100),
+            DisplayText(
+                text: 'Company Login', fontSize: 40, colour: Colors.pink[900]),
             const SizedBox(height: 50),
             GoogleButton(
               buttonSize: 125,
@@ -104,7 +95,9 @@ class LoginState extends State<Login> {
                 }
               },
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 100),
+            DisplayText(
+                text: 'Worker Login', fontSize: 40, colour: Colors.teal[900]),
             const SizedBox(height: 50),
             GoogleButton(
               buttonSize: 125,
@@ -119,7 +112,7 @@ class LoginState extends State<Login> {
                 }
               },
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 100),
           ]),
         ),
       ),
