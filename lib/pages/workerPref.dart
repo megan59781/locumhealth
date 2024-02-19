@@ -5,6 +5,7 @@ import 'package:fyp/templates/displayText.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:location/location.dart';
 
 class WorkerPreference extends StatefulWidget {
   const WorkerPreference({super.key});
@@ -18,6 +19,18 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
   late String works;
+
+  Location location = Location();
+
+  Future<bool> requestPermission() async {
+    final permission = await location.requestPermission();
+    return permission == PermissionStatus.granted;
+  }
+
+  Future<LocationData> getCurrentLocation() async {
+    final locationData = await location.getLocation();
+    return locationData;
+  }
 
   TimeOfDay selectedTime = TimeOfDay.now();
 
@@ -191,6 +204,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 ],
               ),
               const SizedBox(height: 200),
+              Text(getCurrentLocation().toString()),
             ],
           ),
         ),
