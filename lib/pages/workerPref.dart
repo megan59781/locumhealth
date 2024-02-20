@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+//import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:geolocator/geolocator.dart';
@@ -17,9 +17,9 @@ class WorkerPreference extends StatefulWidget {
 
 class WorkerPreferenceState extends State<WorkerPreference> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  late String works;
+  //final FirebaseAuth _auth = FirebaseAuth.instance;
+  //final GoogleSignIn googleSignIn = GoogleSignIn();
+  //late String works;
 
   Future<List<double>> getCurrentLocation() async {
     try {
@@ -33,29 +33,29 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
       return [latitude, longitude];
     } catch (e) {
-      print(e);
+      //print(e);
       // You might want to handle the error accordingly, for example, returning a default location.
       return [0.0, 0.0];
     }
   }
 
-  Future<Map<String, String>> getCurrentSLocation() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        forceAndroidLocationManager: true,
-      );
+  // Future<Map<String, String>> getCurrentSLocation() async {
+  //   try {
+  //     Position position = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: LocationAccuracy.best,
+  //       forceAndroidLocationManager: true,
+  //     );
 
-      String latitude = position.latitude.toString();
-      String longitude = position.longitude.toString();
+  //     String latitude = position.latitude.toString();
+  //     String longitude = position.longitude.toString();
 
-      return {'latitude': latitude, 'longitude': longitude};
-    } catch (e) {
-      print(e);
-      // You might want to handle the error accordingly, for example, returning default strings.
-      return {'latitude': '0.0', 'longitude': '0.0'};
-    }
-  }
+  //     return {'latitude': latitude, 'longitude': longitude};
+  //   } catch (e) {
+  //     print(e);
+  //     // You might want to handle the error accordingly, for example, returning default strings.
+  //     return {'latitude': '0.0', 'longitude': '0.0'};
+  //   }
+  // }
 
   Future<String> getPlacemarks(double lat, double long) async {
     try {
@@ -64,125 +64,22 @@ class WorkerPreferenceState extends State<WorkerPreference> {
       var address = '';
 
       if (placemarks.isNotEmpty) {
-        // Concatenate non-null components of the address
-        var streets = placemarks.reversed
-            .map((placemark) => placemark.street)
-            .where((street) => street != null);
-
-        // Filter out unwanted parts
-        streets = streets.where((street) =>
-            street!.toLowerCase() !=
-            placemarks.reversed.last.locality!
-                .toLowerCase()); // Remove city names
-        streets = streets
-            .where((street) => !street!.contains('+')); // Remove street codes
-
-        address += streets.join(', ');
-
-        address += ', ${placemarks.reversed.last.subLocality ?? ''}';
+        address += placemarks.reversed.last.subLocality ?? '';
         address += ', ${placemarks.reversed.last.locality ?? ''}';
-        address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
-        address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
+        //address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
+        //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
         address += ', ${placemarks.reversed.last.postalCode ?? ''}';
         address += ', ${placemarks.reversed.last.country ?? ''}';
       }
 
-      print("Your Address for ($lat, $long) is: $address");
+      //print("Your Address for ($lat, $long) is: $address");
 
       return address;
     } catch (e) {
-      print("Error getting placemarks: $e");
+      //print("Error getting placemarks: $e");
       return "No Address";
     }
   }
-
-//   Location location = Location();
-
-//   Future<bool> _requestPermission() async {
-//     final permission = await location.requestPermission();
-//     return permission == PermissionStatus.granted;
-//   }
-
-//   Future<LocationData?> _getCurrentLocation() async {
-//     try {
-//       LocationData locationData = await location.getLocation();
-//       return locationData;
-//     } catch (e) {
-//       print("Error getting location: $e");
-//       return null;
-//     }
-//   }
-
-//   Future<bool> requestPermission() async {
-//     final permission = await location.requestPermission();
-//     return permission == PermissionStatus.granted;
-//   }
-
-//   Future<LocationData?> getCurrentLocation() async {
-//     try {
-//       LocationData locationData = await location.getLocation();
-//       return locationData;
-//     } catch (e) {
-//       return null;
-//     }
-//   }
-
-//   String locationString(LocationData locationData) {
-//     double latitude = locationData.latitude!;
-//     double longitude = locationData.longitude!;
-
-//     return "Latitude: $latitude, Longitude: $longitude";
-//   }
-
-//   Future<String?> getLocationString() async {
-//     try {
-//       final permission = await location.requestPermission();
-//       if (permission != PermissionStatus.granted) {
-//         return null; // Permission not granted
-//       }
-
-//       LocationData locationData = await location.getLocation();
-//       double latitude = locationData.latitude!;
-//       double longitude = locationData.longitude!;
-
-//       return "Latitude: $latitude, Longitude: $longitude";
-//     } catch (e) {
-//       return null; // Error occurred while getting location
-//     }
-//   }
-
-//   Future<String> getPlacemarks(double lat, double long) async {
-//   try {
-//     List<Placemark> placemarks = await placemarkFromCoordinates(lat, long);
-
-//     var address = '';
-
-//     if (placemarks.isNotEmpty) {
-//       // Concatenate non-null components of the address
-//       var streets = placemarks.reversed
-//           .map((placemark) => placemark.street)
-//           .where((street) => street != null)
-//           .where((street) => street!.toLowerCase() != placemarks.reversed.last.locality!.toLowerCase())
-//           .where((street) => !street!.contains('+'));
-
-//       address += streets.join(', ');
-
-//       address += ', ${placemarks.reversed.last.subLocality?.toString() ?? ''}';
-//       address += ', ${placemarks.reversed.last.locality?.toString() ?? ''}';
-//       address += ', ${placemarks.reversed.last.subAdministrativeArea?.toString() ?? ''}';
-//       address += ', ${placemarks.reversed.last.administrativeArea?.toString() ?? ''}';
-//       address += ', ${placemarks.reversed.last.postalCode?.toString() ?? ''}';
-//       address += ', ${placemarks.reversed.last.country?.toString() ?? ''}';
-//     }
-
-//     print("Your Address for ($lat, $long) is: $address");
-
-//     return address;
-//   } catch (e) {
-//     print("Error getting placemarks: $e");
-//     return "No Address";
-//   }
-// }
 
   TimeOfDay selectedTime = TimeOfDay.now();
 
@@ -194,47 +91,47 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         .then((value) => value.size > 0 ? true : false);
   }
 
-  Future<void> addWorkerDb(user) async {
-    bool workerRes = await workerExists(user);
-    if (workerRes == true) {
-      print("worker already in database");
-    } else {
-      DateTime bday = DateTime(2000, 1, 1);
-      Map<String, dynamic> worker = {
-        "worker_id": user.uid,
-        "name": user.displayName.toString(),
-        "email": user.email.toString(),
-        "bday": bday.toIso8601String(),
-        "location": "Portsmouth".toString(),
-      };
-      dbhandler.child("Worker").push().set(worker).then((value) {
-        Navigator.of(context).pop();
-      }).catchError((error) {
-        print("Error saving to Firebase: $error");
-      });
-    }
-  }
+  // Future<void> addWorkerDb(user) async {
+  //   bool workerRes = await workerExists(user);
+  //   if (workerRes == true) {
+  //     print("worker already in database");
+  //   } else {
+  //     DateTime bday = DateTime(2000, 1, 1);
+  //     Map<String, dynamic> worker = {
+  //       "worker_id": user.uid,
+  //       "name": user.displayName.toString(),
+  //       "email": user.email.toString(),
+  //       "bday": bday.toIso8601String(),
+  //       "location": "Portsmouth".toString(),
+  //     };
+  //     dbhandler.child("Worker").push().set(worker).then((value) {
+  //       Navigator.of(context).pop();
+  //     }).catchError((error) {
+  //       print("Error saving to Firebase: $error");
+  //     });
+  //   }
+  // }
 
-  Future<User?> _handleSignIn() async {
-    try {
-      GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
-      GoogleSignInAuthentication googleSignInAuthentication =
-          await googleSignInAccount!.authentication;
+  // Future<User?> _handleSignIn() async {
+  //   try {
+  //     GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
+  //     GoogleSignInAuthentication googleSignInAuthentication =
+  //         await googleSignInAccount!.authentication;
 
-      AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleSignInAuthentication.accessToken,
-        idToken: googleSignInAuthentication.idToken,
-      );
+  //     AuthCredential credential = GoogleAuthProvider.credential(
+  //       accessToken: googleSignInAuthentication.accessToken,
+  //       idToken: googleSignInAuthentication.idToken,
+  //     );
 
-      UserCredential authResult = await _auth.signInWithCredential(credential);
-      User? user = authResult.user;
+  //     UserCredential authResult = await _auth.signInWithCredential(credential);
+  //     User? user = authResult.user;
 
-      return user;
-    } catch (error) {
-      //print(error);
-      return null;
-    }
-  }
+  //     return user;
+  //   } catch (error) {
+  //     //print(error);
+  //     return null;
+  //   }
+  // }
 
   void _selectTime(TextEditingController controller) async {
     final TimeOfDay? newTime = await showTimePicker(
@@ -357,8 +254,8 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 ],
               ),
               const SizedBox(height: 200),
-              FutureBuilder<Map<String, String>>(
-                future: getCurrentSLocation(),
+              FutureBuilder<List<double>>(
+                future: getCurrentLocation(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
@@ -369,14 +266,25 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                       colour: Colors.black,
                     );
                   } else {
-                    String latitude =
-                        snapshot.data!['latitude'] ?? 'Default Latitude';
-                    String longitude =
-                        snapshot.data!['longitude'] ?? 'Default Longitude';
-                    return DisplayText(
-                      text: '$latitude $longitude',
-                      fontSize: 20,
-                      colour: Colors.black,
+                    double lat = snapshot.data![0];
+                    double long = snapshot.data![1];
+                    return FutureBuilder<String>(
+                      future: getPlacemarks(lat, long),
+                      builder: (context, locateSnapshot) {
+                        if (locateSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (locateSnapshot.hasError) {
+                          return Text('Error: ${locateSnapshot.error}');
+                        } else {
+                          // Data has been fetched successfully, use locateSnapshot.data as a String
+                          return DisplayText(
+                            text: locateSnapshot.data!,
+                            fontSize: 20,
+                            colour: Colors.black,
+                          );
+                        }
+                      },
                     );
                   }
                 },
