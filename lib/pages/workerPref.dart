@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 //import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
@@ -254,6 +255,11 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 ],
               ),
               const SizedBox(height: 200),
+              const DisplayText(
+                text: 'This is your set Location',
+                fontSize: 20,
+                colour: Colors.black,
+              ),
               FutureBuilder<List<double>>(
                 future: getCurrentLocation(),
                 builder: (context, snapshot) {
@@ -263,7 +269,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                     return const DisplayText(
                       text: 'Error getting location',
                       fontSize: 20,
-                      colour: Colors.black,
+                      colour: Colors.deepPurple,
                     );
                   } else {
                     double lat = snapshot.data![0];
@@ -281,7 +287,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                           return DisplayText(
                             text: locateSnapshot.data!,
                             fontSize: 20,
-                            colour: Colors.black,
+                            colour: Colors.deepPurple,
                           );
                         }
                       },
@@ -289,6 +295,9 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   }
                 },
               ),
+              const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 60, text: 'My location is wrong', onPress: null),
             ],
           ),
         ),
