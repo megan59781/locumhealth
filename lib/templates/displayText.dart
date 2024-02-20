@@ -5,7 +5,7 @@ class DisplayText extends StatelessWidget {
   final double fontSize;
   final Color? colour;
 
-  const DisplayText({
+  const DisplayText( {
     super.key,
     required this.text,
     required this.fontSize,

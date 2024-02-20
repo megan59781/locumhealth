@@ -2,10 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 
 class WorkerPreference extends StatefulWidget {
   const WorkerPreference({super.key});
@@ -20,17 +21,168 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   late String works;
 
-  Location location = Location();
+  Future<List<double>> getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        forceAndroidLocationManager: true,
+      );
 
-  Future<bool> requestPermission() async {
-    final permission = await location.requestPermission();
-    return permission == PermissionStatus.granted;
+      double latitude = position.latitude;
+      double longitude = position.longitude;
+
+      return [latitude, longitude];
+    } catch (e) {
+      print(e);
+      // You might want to handle the error accordingly, for example, returning a default location.
+      return [0.0, 0.0];
+    }
   }
 
-  Future<LocationData> getCurrentLocation() async {
-    final locationData = await location.getLocation();
-    return locationData;
+  Future<Map<String, String>> getCurrentSLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        forceAndroidLocationManager: true,
+      );
+
+      String latitude = position.latitude.toString();
+      String longitude = position.longitude.toString();
+
+      return {'latitude': latitude, 'longitude': longitude};
+    } catch (e) {
+      print(e);
+      // You might want to handle the error accordingly, for example, returning default strings.
+      return {'latitude': '0.0', 'longitude': '0.0'};
+    }
   }
+
+  Future<String> getPlacemarks(double lat, double long) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, long);
+
+      var address = '';
+
+      if (placemarks.isNotEmpty) {
+        // Concatenate non-null components of the address
+        var streets = placemarks.reversed
+            .map((placemark) => placemark.street)
+            .where((street) => street != null);
+
+        // Filter out unwanted parts
+        streets = streets.where((street) =>
+            street!.toLowerCase() !=
+            placemarks.reversed.last.locality!
+                .toLowerCase()); // Remove city names
+        streets = streets
+            .where((street) => !street!.contains('+')); // Remove street codes
+
+        address += streets.join(', ');
+
+        address += ', ${placemarks.reversed.last.subLocality ?? ''}';
+        address += ', ${placemarks.reversed.last.locality ?? ''}';
+        address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
+        address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
+        address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+        address += ', ${placemarks.reversed.last.country ?? ''}';
+      }
+
+      print("Your Address for ($lat, $long) is: $address");
+
+      return address;
+    } catch (e) {
+      print("Error getting placemarks: $e");
+      return "No Address";
+    }
+  }
+
+//   Location location = Location();
+
+//   Future<bool> _requestPermission() async {
+//     final permission = await location.requestPermission();
+//     return permission == PermissionStatus.granted;
+//   }
+
+//   Future<LocationData?> _getCurrentLocation() async {
+//     try {
+//       LocationData locationData = await location.getLocation();
+//       return locationData;
+//     } catch (e) {
+//       print("Error getting location: $e");
+//       return null;
+//     }
+//   }
+
+//   Future<bool> requestPermission() async {
+//     final permission = await location.requestPermission();
+//     return permission == PermissionStatus.granted;
+//   }
+
+//   Future<LocationData?> getCurrentLocation() async {
+//     try {
+//       LocationData locationData = await location.getLocation();
+//       return locationData;
+//     } catch (e) {
+//       return null;
+//     }
+//   }
+
+//   String locationString(LocationData locationData) {
+//     double latitude = locationData.latitude!;
+//     double longitude = locationData.longitude!;
+
+//     return "Latitude: $latitude, Longitude: $longitude";
+//   }
+
+//   Future<String?> getLocationString() async {
+//     try {
+//       final permission = await location.requestPermission();
+//       if (permission != PermissionStatus.granted) {
+//         return null; // Permission not granted
+//       }
+
+//       LocationData locationData = await location.getLocation();
+//       double latitude = locationData.latitude!;
+//       double longitude = locationData.longitude!;
+
+//       return "Latitude: $latitude, Longitude: $longitude";
+//     } catch (e) {
+//       return null; // Error occurred while getting location
+//     }
+//   }
+
+//   Future<String> getPlacemarks(double lat, double long) async {
+//   try {
+//     List<Placemark> placemarks = await placemarkFromCoordinates(lat, long);
+
+//     var address = '';
+
+//     if (placemarks.isNotEmpty) {
+//       // Concatenate non-null components of the address
+//       var streets = placemarks.reversed
+//           .map((placemark) => placemark.street)
+//           .where((street) => street != null)
+//           .where((street) => street!.toLowerCase() != placemarks.reversed.last.locality!.toLowerCase())
+//           .where((street) => !street!.contains('+'));
+
+//       address += streets.join(', ');
+
+//       address += ', ${placemarks.reversed.last.subLocality?.toString() ?? ''}';
+//       address += ', ${placemarks.reversed.last.locality?.toString() ?? ''}';
+//       address += ', ${placemarks.reversed.last.subAdministrativeArea?.toString() ?? ''}';
+//       address += ', ${placemarks.reversed.last.administrativeArea?.toString() ?? ''}';
+//       address += ', ${placemarks.reversed.last.postalCode?.toString() ?? ''}';
+//       address += ', ${placemarks.reversed.last.country?.toString() ?? ''}';
+//     }
+
+//     print("Your Address for ($lat, $long) is: $address");
+
+//     return address;
+//   } catch (e) {
+//     print("Error getting placemarks: $e");
+//     return "No Address";
+//   }
+// }
 
   TimeOfDay selectedTime = TimeOfDay.now();
 
@@ -160,7 +312,8 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MaterialApp(
+        home: Scaffold(
       backgroundColor: Colors.brown[100],
       body: SafeArea(
         child: Center(
@@ -204,11 +357,34 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 ],
               ),
               const SizedBox(height: 200),
-              Text(getCurrentLocation().toString()),
+              FutureBuilder<Map<String, String>>(
+                future: getCurrentSLocation(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError || snapshot.data == null) {
+                    return const DisplayText(
+                      text: 'Error getting location',
+                      fontSize: 20,
+                      colour: Colors.black,
+                    );
+                  } else {
+                    String latitude =
+                        snapshot.data!['latitude'] ?? 'Default Latitude';
+                    String longitude =
+                        snapshot.data!['longitude'] ?? 'Default Longitude';
+                    return DisplayText(
+                      text: '$latitude $longitude',
+                      fontSize: 20,
+                      colour: Colors.black,
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ),
       ),
-    );
+    ));
   }
 }
