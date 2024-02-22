@@ -136,7 +136,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   //   }
   // }
 
-  Future<void> _milesSelector(BuildContext context) {
+  Future<int?> _milesSelector(BuildContext context) async {
     return showDialog<int>(
         context: context,
         builder: (BuildContext context) {
@@ -170,7 +170,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                     text: "Submit", fontSize: 20, colour: Colors.black),
                 onPressed: () {
                   // TO DO SAVE
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(currentMilesVal);
                 },
               )
             ],
@@ -262,7 +262,11 @@ class WorkerPreferenceState extends State<WorkerPreference> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 200),
+              const DisplayText(
+                  text: "Select Your Work Availability",
+                  fontSize: 28,
+                  colour: Colors.black),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -297,7 +301,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   ),
                 ],
               ),
-              const SizedBox(height: 200),
+              const SizedBox(height: 50),
               const DisplayText(
                 text: 'This is your set Location',
                 fontSize: 20,
@@ -342,7 +346,33 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               PushButton(
                   buttonSize: 60,
                   text: 'My location is wrong',
-                  onPress: () => _milesSelector(context)),
+                  onPress: () => null),
+              const SizedBox(height: 50),
+              DisplayText(
+                  text: "Maxium Miles Traveled: $currentMilesVal",
+                  fontSize: 20,
+                  colour: Colors.black),
+              const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 60,
+                  text: 'Change Miles',
+                  onPress: () {
+                    _milesSelector(context);
+                    setState(() {
+                      currentMilesVal;
+                    });
+                  }),
+              const SizedBox(height: 50),
+              PushButton(
+                  buttonSize: 70,
+                  text: 'Submit Preferences',
+                  onPress: () {
+                    // to add to db
+                    setState(() {
+                      currentMilesVal;
+                    });
+                  }),
+              const SizedBox(height: 20),
             ],
           ),
         ),

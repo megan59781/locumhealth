@@ -4,7 +4,7 @@ class PushButton extends StatelessWidget {
   final double buttonSize;
   final String text;
   final Function()? onPress;
-  const PushButton({
+  const PushButton( {
     super.key,
     required this.buttonSize,
     required this.text,
