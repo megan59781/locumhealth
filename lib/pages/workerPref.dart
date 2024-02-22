@@ -8,6 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:numberpicker/numberpicker.dart';
 
 class WorkerPreference extends StatefulWidget {
   const WorkerPreference({super.key});
@@ -21,6 +22,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   //final FirebaseAuth _auth = FirebaseAuth.instance;
   //final GoogleSignIn googleSignIn = GoogleSignIn();
   //late String works;
+  int currentMilesVal = 1;
 
   Future<List<double>> getCurrentLocation() async {
     try {
@@ -134,6 +136,48 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   //   }
   // }
 
+  Future<void> _milesSelector(BuildContext context) {
+    return showDialog<int>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const DisplayText(
+                text: "Select the maxium miles",
+                fontSize: 20,
+                colour: Colors.black),
+            content: SizedBox(
+                height: MediaQuery.of(context).size.width * 0.6,
+                child: StatefulBuilder(builder: (context, setState) {
+                  return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        NumberPicker(
+                          selectedTextStyle: const TextStyle(
+                              color: Colors.deepPurple, fontSize: 20),
+                          value: currentMilesVal,
+                          minValue: 1,
+                          maxValue: 25,
+                          step: 1,
+                          onChanged: (value) =>
+                              setState(() => currentMilesVal = value),
+                        )
+                      ]);
+                })),
+            actions: [
+              TextButton(
+                child: const DisplayText(
+                    text: "Submit", fontSize: 20, colour: Colors.black),
+                onPressed: () {
+                  // TO DO SAVE
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        });
+  }
+
   void _selectTime(TextEditingController controller) async {
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
@@ -147,10 +191,9 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  Future<void> _timeselector(BuildContext context) {
+  Future<void> _timeSelector(BuildContext context) {
     TextEditingController startTimeController = TextEditingController();
     TextEditingController endTimeController = TextEditingController();
-
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -227,30 +270,30 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   const SizedBox(width: 7),
                   Expanded(
                       child: DayButton(
-                          text: "Mon", onPress: () => _timeselector(context))),
+                          text: "Mon", onPress: () => _timeSelector(context))),
                   Expanded(
                     child: DayButton(
-                        text: "Tue", onPress: () => _timeselector(context)),
+                        text: "Tue", onPress: () => _timeSelector(context)),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Wed", onPress: () => _timeselector(context)),
+                        text: "Wed", onPress: () => _timeSelector(context)),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Thu", onPress: () => _timeselector(context)),
+                        text: "Thu", onPress: () => _timeSelector(context)),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Fri", onPress: () => _timeselector(context)),
+                        text: "Fri", onPress: () => _timeSelector(context)),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Sat", onPress: () => _timeselector(context)),
+                        text: "Sat", onPress: () => _timeSelector(context)),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Sun", onPress: () => _timeselector(context)),
+                        text: "Sun", onPress: () => _timeSelector(context)),
                   ),
                 ],
               ),
@@ -297,7 +340,9 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               ),
               const SizedBox(height: 20),
               PushButton(
-                  buttonSize: 60, text: 'My location is wrong', onPress: null),
+                  buttonSize: 60,
+                  text: 'My location is wrong',
+                  onPress: () => _milesSelector(context)),
             ],
           ),
         ),
