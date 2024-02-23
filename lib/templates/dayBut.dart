@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 class DayButton extends StatefulWidget {
   final String text;
+  final bool selected;
   final Function()? onPress;
 
   const DayButton({
     Key? key,
     required this.text,
+    required this.selected,
     required this.onPress,
   }) : super(key: key);
 
@@ -43,7 +45,7 @@ class _DayButtonState extends State<DayButton> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    clicked
+                    widget.selected
                         ? Icon(
                             Icons.check_circle_outline,
                             color: Colors.green[600],

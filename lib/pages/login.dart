@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/pages/navigation.dart';
 import 'package:fyp/templates/displayText.dart';
@@ -31,7 +31,8 @@ class LoginState extends State<Login> {
   // }
 
   Future<void> addWorkerDb(user) async {
-    //bool workerRes = await workerExists(user);
+    // bool workerRes = await workerExists(user);
+    // if (workerRes == false){
     DateTime bday = DateTime(2000, 1, 1);
     Map<String, dynamic> worker = {
       "worker_id": user.uid,
@@ -106,7 +107,7 @@ class LoginState extends State<Login> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => AppNavigationBar()));
+                          builder: (context) => AppNavigationBar(worker_id: user.uid)));
                 } else {
                   print('failed');
                   // TO DO SORT FAILED GOOGLE

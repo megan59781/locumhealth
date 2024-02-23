@@ -1,17 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
-//import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class WorkerPreference extends StatefulWidget {
-  const WorkerPreference({super.key});
+  final String worker_id;
+
+  const WorkerPreference({super.key, required this.worker_id});
 
   @override
   State createState() => WorkerPreferenceState();
@@ -19,10 +18,30 @@ class WorkerPreference extends StatefulWidget {
 
 class WorkerPreferenceState extends State<WorkerPreference> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
-  //final FirebaseAuth _auth = FirebaseAuth.instance;
-  //final GoogleSignIn googleSignIn = GoogleSignIn();
-  //late String works;
   int currentMilesVal = 1;
+  TimeOfDay selectedTime = TimeOfDay.now();
+
+  bool selMon = false;
+  TimeOfDay monStartTime = const TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay monEndTime = const TimeOfDay(hour: 0, minute: 0);
+  bool selTue = false;
+  TimeOfDay tueStartTime = const TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay tueEndTime = const TimeOfDay(hour: 0, minute: 0);
+  bool selWed = false;
+  TimeOfDay wedStartTime = const TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay wedEndTime = const TimeOfDay(hour: 0, minute: 0);
+  bool selThu = false;
+  TimeOfDay thuStartTime = const TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay thuEndTime = const TimeOfDay(hour: 0, minute: 0);
+  bool selFri = false;
+  TimeOfDay friStartTime = const TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay friEndTime = const TimeOfDay(hour: 0, minute: 0);
+  bool selSat = false;
+  TimeOfDay satStartTime = const TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay satEndTime = const TimeOfDay(hour: 0, minute: 0);
+  bool selSun = false;
+  TimeOfDay sunStartTime = const TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay sunEndTime = const TimeOfDay(hour: 0, minute: 0);
 
   Future<List<double>> getCurrentLocation() async {
     try {
@@ -69,7 +88,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
       if (placemarks.isNotEmpty) {
         address += placemarks.reversed.last.subLocality ?? '';
         address += ', ${placemarks.reversed.last.locality ?? ''}';
-        //address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
+        address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
         //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
         address += ', ${placemarks.reversed.last.postalCode ?? ''}';
         address += ', ${placemarks.reversed.last.country ?? ''}';
@@ -84,57 +103,23 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  TimeOfDay selectedTime = TimeOfDay.now();
+  Future<void> addAvailableDb(int dayId, String workerId, TimeOfDay startTime,
+      TimeOfDay endTime, BuildContext context) async {
+    Map<String, dynamic> available = {
+      "day_id": dayId,
+      "worker_id": workerId,
+      "day_start_time": startTime.format(context),
+      "day_end_time": endTime.format(context),
+      "miles": currentMilesVal,
+    };
 
-  Future<bool> workerExists(user) async {
-    return await FirebaseFirestore.instance
-        .collection("Worker")
-        .where("worker_id", isEqualTo: user.uid)
-        .get()
-        .then((value) => value.size > 0 ? true : false);
+    try {
+      await dbhandler.child("Availability").push().set(available);
+      //Navigator.of(context).pop();
+    } catch (error) {
+      print("Error saving to Firebase: $error");
+    }
   }
-
-  // Future<void> addWorkerDb(user) async {
-  //   bool workerRes = await workerExists(user);
-  //   if (workerRes == true) {
-  //     print("worker already in database");
-  //   } else {
-  //     DateTime bday = DateTime(2000, 1, 1);
-  //     Map<String, dynamic> worker = {
-  //       "worker_id": user.uid,
-  //       "name": user.displayName.toString(),
-  //       "email": user.email.toString(),
-  //       "bday": bday.toIso8601String(),
-  //       "location": "Portsmouth".toString(),
-  //     };
-  //     dbhandler.child("Worker").push().set(worker).then((value) {
-  //       Navigator.of(context).pop();
-  //     }).catchError((error) {
-  //       print("Error saving to Firebase: $error");
-  //     });
-  //   }
-  // }
-
-  // Future<User?> _handleSignIn() async {
-  //   try {
-  //     GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
-  //     GoogleSignInAuthentication googleSignInAuthentication =
-  //         await googleSignInAccount!.authentication;
-
-  //     AuthCredential credential = GoogleAuthProvider.credential(
-  //       accessToken: googleSignInAuthentication.accessToken,
-  //       idToken: googleSignInAuthentication.idToken,
-  //     );
-
-  //     UserCredential authResult = await _auth.signInWithCredential(credential);
-  //     User? user = authResult.user;
-
-  //     return user;
-  //   } catch (error) {
-  //     //print(error);
-  //     return null;
-  //   }
-  // }
 
   Future<int?> _milesSelector(BuildContext context) async {
     return showDialog<int>(
@@ -178,7 +163,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         });
   }
 
-  void _selectTime(TextEditingController controller) async {
+  Future<TimeOfDay> _selectTime(TextEditingController controller) async {
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
       initialTime: selectedTime,
@@ -189,9 +174,11 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         controller.text = selectedTime.format(context);
       });
     }
+    return selectedTime;
   }
 
-  Future<void> _timeSelector(BuildContext context) {
+  Future<void> _timeSelector(BuildContext context, String currentStart,
+      String currentEnd, Function(bool, TimeOfDay, TimeOfDay) updateSelected) {
     TextEditingController startTimeController = TextEditingController();
     TextEditingController endTimeController = TextEditingController();
     return showDialog<void>(
@@ -200,8 +187,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         return AlertDialog(
           title: const Text('Please Select your Time Availability'),
           content: SizedBox(
-            height: MediaQuery.of(context).size.width *
-                0.6, // Adjust the width as needed
+            height: MediaQuery.of(context).size.width * 0.6,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -211,9 +197,9 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 const SizedBox(height: 5),
                 TextFormField(
                   controller: startTimeController,
-                  decoration: const InputDecoration(
-                    hintText: 'Select Start Time',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: currentStart,
+                    border: const OutlineInputBorder(),
                   ),
                   onTap: () => _selectTime(startTimeController),
                 ),
@@ -223,14 +209,12 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 const SizedBox(height: 5),
                 TextFormField(
                   controller: endTimeController,
-                  decoration: const InputDecoration(
-                    hintText: 'Select End Time',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: currentEnd,
+                    border: const OutlineInputBorder(),
                   ),
-                  onTap: () => _selectTime(
-                    endTimeController,
-                  ),
-                )
+                  onTap: () => _selectTime(endTimeController),
+                ),
               ],
             ),
           ),
@@ -239,9 +223,26 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               style: TextButton.styleFrom(
                 textStyle: Theme.of(context).textTheme.labelLarge,
               ),
+              child: const Text('Remove'),
+              onPressed: () {
+                TimeOfDay emptyTime = const TimeOfDay(hour: 0, minute: 0);
+                updateSelected(false, emptyTime, emptyTime);
+                Navigator.of(context).pop();
+              },
+            ),
+            const SizedBox(width: 120),
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
               child: const Text('Submit'),
               onPressed: () {
                 // TO DO SAVE TIMES
+                TimeOfDay startTime = TimeOfDay.fromDateTime(
+                    DateTime.parse("2024-01-01 ${startTimeController.text}"));
+                TimeOfDay endTime = TimeOfDay.fromDateTime(
+                    DateTime.parse("2024-01-01 ${endTimeController.text}"));
+                updateSelected(true, startTime, endTime);
                 Navigator.of(context).pop();
               },
             ),
@@ -253,6 +254,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
   @override
   Widget build(BuildContext context) {
+    String workerId = widget.worker_id;
     return MaterialApp(
         home: Scaffold(
       backgroundColor: Colors.brown[100],
@@ -274,30 +276,113 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   const SizedBox(width: 7),
                   Expanded(
                       child: DayButton(
-                          text: "Mon", onPress: () => _timeSelector(context))),
+                          text: "Mon",
+                          selected: selMon,
+                          onPress: () => _timeSelector(
+                                  context,
+                                  monStartTime.format(context),
+                                  monEndTime.format(context),
+                                  (value, startTime, endTime) {
+                                setState(() {
+                                  selMon = value;
+                                  monStartTime = startTime;
+                                  monEndTime = endTime;
+                                });
+                              }))),
+                  Expanded(
+                      child: DayButton(
+                          text: "Tue",
+                          selected: selTue,
+                          onPress: () => _timeSelector(
+                                  context,
+                                  tueStartTime.format(context),
+                                  tueEndTime.format(context),
+                                  (value, startTime, endTime) {
+                                setState(() {
+                                  selTue = value;
+                                  tueStartTime = startTime;
+                                  tueEndTime = endTime;
+                                });
+                              }))),
                   Expanded(
                     child: DayButton(
-                        text: "Tue", onPress: () => _timeSelector(context)),
+                        text: "Wed",
+                        selected: selWed,
+                        onPress: () => _timeSelector(
+                                context,
+                                wedStartTime.format(context),
+                                wedEndTime.format(context),
+                                (value, startTime, endTime) {
+                              setState(() {
+                                selWed = value;
+                                wedStartTime = startTime;
+                                wedEndTime = endTime;
+                              });
+                            })),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Wed", onPress: () => _timeSelector(context)),
+                        text: "Thu",
+                        selected: selThu,
+                        onPress: () => _timeSelector(
+                                context,
+                                thuStartTime.format(context),
+                                thuEndTime.format(context),
+                                (value, startTime, endTime) {
+                              setState(() {
+                                selThu = value;
+                                thuStartTime = startTime;
+                                thuEndTime = endTime;
+                              });
+                            })),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Thu", onPress: () => _timeSelector(context)),
+                        text: "Fri",
+                        selected: selFri,
+                        onPress: () => _timeSelector(
+                                context,
+                                friStartTime.format(context),
+                                friEndTime.format(context),
+                                (value, startTime, endTime) {
+                              setState(() {
+                                selFri = value;
+                                friStartTime = startTime;
+                                friEndTime = endTime;
+                              });
+                            })),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Fri", onPress: () => _timeSelector(context)),
+                        text: "Sat",
+                        selected: selSat,
+                        onPress: () => _timeSelector(
+                                context,
+                                satStartTime.format(context),
+                                satEndTime.format(context),
+                                (value, startTime, endTime) {
+                              setState(() {
+                                selSat = value;
+                                satStartTime = startTime;
+                                satEndTime = endTime;
+                              });
+                            })),
                   ),
                   Expanded(
                     child: DayButton(
-                        text: "Sat", onPress: () => _timeSelector(context)),
-                  ),
-                  Expanded(
-                    child: DayButton(
-                        text: "Sun", onPress: () => _timeSelector(context)),
+                        text: "Sun",
+                        selected: selSun,
+                        onPress: () => _timeSelector(
+                                context,
+                                sunStartTime.format(context),
+                                sunEndTime.format(context),
+                                (value, startTime, endTime) {
+                              setState(() {
+                                selSun = value;
+                                sunStartTime = startTime;
+                                sunEndTime = endTime;
+                              });
+                            })),
                   ),
                 ],
               ),
@@ -364,14 +449,32 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   }),
               const SizedBox(height: 50),
               PushButton(
-                  buttonSize: 70,
-                  text: 'Submit Preferences',
-                  onPress: () {
-                    // to add to db
-                    setState(() {
-                      currentMilesVal;
-                    });
-                  }),
+                buttonSize: 70,
+                text: 'Submit Preferences',
+                onPress: () async {
+                  if (selMon) {
+                    addAvailableDb(1, workerId, monStartTime, monEndTime, context);
+                  }
+                  if (selTue) {
+                    addAvailableDb(2, workerId, tueStartTime, tueEndTime, context);
+                  }
+                  if (selWed) {
+                    addAvailableDb(3, workerId, wedStartTime, wedEndTime, context);
+                  }
+                  if (selThu) {
+                    addAvailableDb(4, workerId, thuStartTime, thuEndTime, context);
+                  }
+                  if (selFri) {
+                    addAvailableDb(5, workerId, friStartTime, friEndTime, context);
+                  }
+                  if (selSat) {
+                    addAvailableDb(6, workerId, satStartTime, satEndTime, context);
+                  }
+                  if (selSun) {
+                    addAvailableDb(7, workerId, sunStartTime, sunEndTime, context);
+                  }
+                },
+              ),
               const SizedBox(height: 20),
             ],
           ),
