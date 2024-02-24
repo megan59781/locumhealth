@@ -8,9 +8,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class WorkerPreference extends StatefulWidget {
-  final String worker_id;
+  final String workerId;
 
-  const WorkerPreference({super.key, required this.worker_id});
+  const WorkerPreference({super.key, required this.workerId});
 
   @override
   State createState() => WorkerPreferenceState();
@@ -254,7 +254,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
   @override
   Widget build(BuildContext context) {
-    String workerId = widget.worker_id;
+    String workerId = widget.workerId;
     return MaterialApp(
         home: Scaffold(
       backgroundColor: Colors.brown[100],

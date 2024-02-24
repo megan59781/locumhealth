@@ -1,6 +1,7 @@
 //import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fyp/pages/navigation.dart';
+import 'package:fyp/pages/company/companyNav.dart';
+import 'package:fyp/pages/worker/workerNav.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/googleBut.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -48,6 +49,21 @@ class LoginState extends State<Login> {
     });
   }
 
+  Future<void> addCompanyDb(user) async {
+    // bool workerRes = await workerExists(user);
+    // if (workerRes == false){
+    Map<String, dynamic> company = {
+      "company_id": user.uid,
+      "name": user.displayName.toString(),
+      "email": user.email.toString(),
+    };
+    dbhandler.child("Company").push().set(company).then((value) {
+      //Navigator.of(context).pop();
+    }).catchError((error) {
+      print("Error saving to Firebase: $error");
+    });
+  }
+
   Future<User?> _handleSignIn() async {
     try {
       GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
@@ -87,6 +103,11 @@ class LoginState extends State<Login> {
                 if (user != null) {
                   print('correct');
                   //addWorkerDb(user);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              CompanyNavigationBar(companyId: user.uid)));
                 } else {
                   print('failed');
                   // TO DO SORT FAILED GOOGLE
@@ -107,7 +128,8 @@ class LoginState extends State<Login> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => AppNavigationBar(worker_id: user.uid)));
+                          builder: (context) =>
+                              WorkerNavigationBar(workerId: user.uid)));
                 } else {
                   print('failed');
                   // TO DO SORT FAILED GOOGLE

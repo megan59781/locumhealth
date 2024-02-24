@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:fyp/pages/login.dart';
+import 'package:fyp/pages/company/companyCreate.dart';
+//import 'package:fyp/pages/login.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const Login(),
+      home: CompanyCreateJob(companyId: "11"), //const Login(),
     );
   }
 }
