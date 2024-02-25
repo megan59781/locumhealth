@@ -1,4 +1,4 @@
-//import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math' show cos, sqrt, asin;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
@@ -38,8 +38,25 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     return hours * 60 + minutes;
   }
 
+  // Haversine formula to calculate distnace bewteen 2 points
+  double calculateDistance(lat1, lon1, lat2, lon2) {
+    double haversine(lat1, lon1, lat2, lon2) {
+      var p = 0.017453292519943295;
+      var c = cos;
+      var a = 0.5 -
+          c((lat2 - lat1) * p) / 2 +
+          c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+      return 12742 * asin(sqrt(a));
+    }
+
+    return haversine(lat1, lon1, lat2, lon2);
+  }
+
   void getAvailablWorkers(
       String jobId, Function(List<dynamic> workerList) getList) {
+    print("Megan this is lat long calc");
+    print(calculateDistance(50.78770, 1.084350, 50.798870, 0.988060));
+
     dbHandler
         .child('Jobs')
         .orderByChild('job_id')
@@ -114,13 +131,81 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
                   if ((availStartTime <= stringTimeToMins(jobStartTime)) &&
                       (availEndTime >= stringTimeToMins(jobEndTime))) {
-                    availWorkerList.add(value);
+                    String workerId = value['worker_id'];
+                    int miles = value['miles'];
+                    availWorkerList.add([workerId, miles]);
                   }
                 });
 
                 // Now you have a list of jobs
                 print('Worker List: $availWorkerList');
-                getList(availWorkerList);
+
+                for (List<dynamic> worker in availWorkerList) {
+                  String workerId = worker[0];
+                  dbHandler
+                      .child('Worker')
+                      .orderByChild('worker_id')
+                      .equalTo(workerId)
+                      .onValue
+                      .listen((event) {
+                    print(
+                        'Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
+
+                    if (event.snapshot.value != null) {
+                      Map<dynamic, dynamic>? data =
+                          event.snapshot.value as Map<dynamic, dynamic>?;
+                      if (data != null) {
+                        var jobKey = data.keys.first;
+                        var jobData = data[jobKey]; //WORKING HERE TO FINNISH LOCATION
+
+                        var dateString = jobData['date'];
+                        // var companyId = jobData['company_id'];
+                        var jobStartTime = jobData['day_start_time'];
+                        var jobEndTime = jobData['day_end_time'];
+                        // var jobId = jobData['job_id'];
+                        // var location = jobData['location'];
+
+                        DateTime date =
+                            DateFormat('dd-MM-yyyy').parse(dateString);
+                        String day = DateFormat('EEEE').format(date);
+                        //print('day');
+                        int dayId = 0;
+                        if (day == 'Monday') {
+                          dayId = 1;
+                        } else if (day == 'Tuesday') {
+                          dayId = 2;
+                        } else if (day == 'Wednesday') {
+                          dayId = 3;
+                        } else if (day == 'Thursday') {
+                          dayId = 4;
+                        } else if (day == 'Friday') {
+                          dayId = 5;
+                        } else if (day == 'Saturday') {
+                          dayId = 6;
+                        } else if (day == 'Sunday') {
+                          dayId = 7;
+                        } else {
+                          // error
+                          print('Invalid day');
+                        }
+
+                        // print("MEGAN IT WORKS");
+                        // print("Job ID: $jobId");
+                        // print(dateString);
+                        // print("Company ID: $companyId");
+                        // print("Day Start Time: $dayStartTime");
+                        // print("Day End Time: $dayEndTime");
+                      } else {
+                        print(
+                            "MEGAN IT fails: Data is not in the expected format");
+                      }
+                    } else {
+                      print("MEGAN IT fails: No data found for Job ID: $jobId");
+                    }
+                  });
+                }
+
+                getList(availWorkerList); // TO DO RETURN MAIN LIST
               }
             } else {
               // Handle the case when there are no jobs with day_id equal to 1
@@ -159,24 +244,26 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                   itemCount: workerList.length,
                   itemBuilder: (context, index) {
                     // Assuming each worker is represented as a Map
-                    Map<dynamic, dynamic> worker = workerList[index];
+                    List<Object> worker = workerList[index];
 
                     return InkWell(
                       onTap: () {
                         // Handle the click on the list item
-                        print('Clicked on worker: ${worker['worker_id']}');
+                        print('Clicked on worker: ${worker[0]}');
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
-                        padding: const EdgeInsets.all(10), // space inside item box
+                        padding:
+                            const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
-                          border:
-                              Border.all(color: Colors.deepPurple),
-                          borderRadius: BorderRadius.circular(
-                              10),
-                        ), 
+                          border: Border.all(color: Colors.deepPurple),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         child: ListTile(
-                          title: DisplayText(text: "worker: $index", fontSize: 24, colour: Colors.black) ,
+                          title: DisplayText(
+                              text: "worker: $index",
+                              fontSize: 24,
+                              colour: Colors.black),
                         ),
                       ),
                     );

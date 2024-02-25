@@ -4,6 +4,7 @@ import 'package:fyp/pages/company/companyNav.dart';
 import 'package:fyp/pages/worker/workerNav.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/googleBut.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -23,6 +24,24 @@ class LoginState extends State<Login> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   late String works;
 
+  Future<List<double>> getCurrentLatLong() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        forceAndroidLocationManager: true,
+      );
+
+      double latitude = position.latitude;
+      double longitude = position.longitude;
+
+      return [latitude, longitude];
+    } catch (e) {
+      //print(e);
+      // You might want to handle the error accordingly, for example, returning a default location.
+      return [0.0, 0.0];
+    }
+  }
+
   // Future<bool> workerExists(user) async {
   //   return await FirebaseFirestore.instance
   //       .collection("Worker")
@@ -34,14 +53,19 @@ class LoginState extends State<Login> {
   Future<void> addWorkerDb(user) async {
     // bool workerRes = await workerExists(user);
     // if (workerRes == false){
+
+    List<double> location = await getCurrentLatLong();
+
     DateTime bday = DateTime(2000, 1, 1);
     Map<String, dynamic> worker = {
       "worker_id": user.uid,
       "name": user.displayName.toString(),
       "email": user.email.toString(),
       "bday": bday.toIso8601String(),
-      "location": "Portsmouth".toString(),
+      "latitude": location[0],
+      "longitude": location[1],
     };
+    
     dbhandler.child("Worker").push().set(worker).then((value) {
       //Navigator.of(context).pop();
     }).catchError((error) {

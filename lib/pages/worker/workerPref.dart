@@ -43,7 +43,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   TimeOfDay sunStartTime = const TimeOfDay(hour: 0, minute: 0);
   TimeOfDay sunEndTime = const TimeOfDay(hour: 0, minute: 0);
 
-  Future<List<double>> getCurrentLocation() async {
+  Future<List<double>> getCurrentLatLong() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
@@ -393,7 +393,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 colour: Colors.black,
               ),
               FutureBuilder<List<double>>(
-                future: getCurrentLocation(),
+                future: getCurrentLatLong(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
