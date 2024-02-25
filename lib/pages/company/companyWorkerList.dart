@@ -1,6 +1,7 @@
 //import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:intl/intl.dart';
 
@@ -15,23 +16,31 @@ class CompanyWorkerList extends StatefulWidget {
 }
 
 class CompanyWorkerListState extends State<CompanyWorkerList> {
-  List searchResult = [];
+  List<dynamic> workerList = [];
+  DatabaseReference dbHandler = FirebaseDatabase.instance.ref();
 
-  final workerDbHandler = FirebaseDatabase.instance.ref().child("Worker");
+  @override
+  void initState() {
+    super.initState();
+    String jobId = widget.jobId;
+    getAvailablWorkers(jobId, (List<dynamic> availWorkerList) {
+      setState(() {
+        workerList = availWorkerList;
+      });
+    });
+  }
 
   // calculates minuites to compare in firebase function
-  int stringTimeToInt(String time) {
+  int stringTimeToMins(String time) {
     List<String> parts = time.split(':');
     int hours = int.parse(parts[0]);
     int minutes = int.parse(parts[1]);
     return hours * 60 + minutes;
   }
 
-  void getJobData(String jobId) {
-    print('MEGAN IT runs');
-    DatabaseReference databaseReference = FirebaseDatabase.instance.ref();
-
-    databaseReference
+  void getAvailablWorkers(
+      String jobId, Function(List<dynamic> workerList) getList) {
+    dbHandler
         .child('Jobs')
         .orderByChild('job_id')
         .equalTo(jobId)
@@ -84,8 +93,41 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
           // print("Company ID: $companyId");
           // print("Day Start Time: $dayStartTime");
           // print("Day End Time: $dayEndTime");
+          dbHandler
+              .child('Availability')
+              .orderByChild('day_id')
+              .equalTo(dayId)
+              .onValue
+              .listen((DatabaseEvent event) {
+            if (event.snapshot.value != null) {
+              // Explicitly cast to Map<dynamic, dynamic>
+              Map<dynamic, dynamic>? data =
+                  event.snapshot.value as Map<dynamic, dynamic>?;
 
-          matchJobToWorker(jobId, jobStartTime, jobEndTime, dayId);
+              if (data != null) {
+                // Convert the Map<dynamic, dynamic> to a List
+                List<dynamic> availWorkerList = [];
+                data.forEach((key, value) {
+                  int availStartTime =
+                      stringTimeToMins(value['day_start_time']);
+                  int availEndTime = stringTimeToMins(value['day_end_time']);
+
+                  if ((availStartTime <= stringTimeToMins(jobStartTime)) &&
+                      (availEndTime >= stringTimeToMins(jobEndTime))) {
+                    availWorkerList.add(value);
+                  }
+                });
+
+                // Now you have a list of jobs
+                print('Worker List: $availWorkerList');
+                getList(availWorkerList);
+              }
+            } else {
+              // Handle the case when there are no jobs with day_id equal to 1
+              print('No jobs found with day_id equal to 1');
+              getList([]);
+            }
+          });
         } else {
           print("MEGAN IT fails: Data is not in the expected format");
         }
@@ -95,47 +137,64 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     });
   }
 
-  void matchJobToWorker(
-      String jobId, String jobStart, String jobEnd, int jobDay) {}
-
   @override
   Widget build(BuildContext context) {
     String jobId = widget.jobId;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Firebase Search"),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Search Here",
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const DisplayText(
+                  text: "List of Availiable Workers",
+                  fontSize: 30,
+                  colour: Colors.black),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.5,
+                width: MediaQuery.of(context).size.width * 0.9,
+                child: ListView.builder(
+                  itemCount: workerList.length,
+                  itemBuilder: (context, index) {
+                    // Assuming each worker is represented as a Map
+                    Map<dynamic, dynamic> worker = workerList[index];
+
+                    return InkWell(
+                      onTap: () {
+                        // Handle the click on the list item
+                        print('Clicked on worker: ${worker['worker_id']}');
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(5), // between items
+                        padding: const EdgeInsets.all(10), // space inside item box
+                        decoration: BoxDecoration(
+                          border:
+                              Border.all(color: Colors.deepPurple),
+                          borderRadius: BorderRadius.circular(
+                              10),
+                        ), 
+                        child: ListTile(
+                          title: DisplayText(text: "worker: $index", fontSize: 24, colour: Colors.black) ,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-              onChanged: (query) {},
-            ),
+              const SizedBox(height: 100),
+              PushButton(
+                  buttonSize: 60,
+                  text: "test",
+                  onPress: () => getAvailablWorkers(jobId, (availWorkerList) {
+                        setState(() {
+                          workerList = availWorkerList;
+                        });
+                      })),
+            ],
           ),
-          PushButton(
-            buttonSize: 60,
-            text: "test",
-            onPress: () async {
-              getJobData(jobId);
-            },
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: searchResult.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(searchResult[index]['number_id']),
-                  subtitle: Text(searchResult[index]['string_id']),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
