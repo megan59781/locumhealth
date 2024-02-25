@@ -119,8 +119,8 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
       "job_id": jobId,
       "company_id": companyId,
       "date": date,
-      "day_start_time": startTime.format(context),
-      "day_end_time": endTime.format(context),
+      "job_start_time": startTime.format(context),
+      "job_end_time": endTime.format(context),
       "location": location,
     };
 
@@ -132,9 +132,32 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     }
   }
 
+  // void workersToJobFilter(String jobStart, String jobEnd) {
+  // dbhandler.child('Availability');
+
+//   //orderByChild('day_end_time')
+
+//   dbhandler
+//       .orderByChild('day_start_time')
+//       .startAt(jobStart)
+//       .endAt(jobEnd)
+//       .onValue
+//       .listen((event) {
+//         DataSnapshot dataSnapshot = event.snapshot;
+//         Map<dynamic, dynamic> values = dataSnapshot.value;
+//         values.forEach((key, values) {
+//           print('Key: $key');
+//           print('Name: ${values['day_start_time']}');
+//           print('Email: ${values['day_end_time']}');
+//           print('Time: ${values['miles']}');
+//         });
+//       });
+// }
+
+
   @override
   Widget build(BuildContext context) {
-    String dateString = DateFormat('dd/MM/yyyy').format(selectedDate);
+    String dateString = DateFormat('dd-MM-yyyy').format(selectedDate);
     String companyId = widget.companyId;
     return Scaffold(
       backgroundColor: Colors.white,
@@ -208,8 +231,8 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
               buttonSize: 60,
               text: 'Create Job',
               onPress: () async {
-                addJobDb(dateString, companyId, startTime, endTime,
-                    "po1", context);
+                addJobDb(
+                    dateString, companyId, startTime, endTime, "po1", context);
               },
             ),
           ]),
