@@ -23,9 +23,9 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
   void initState() {
     super.initState();
     String jobId = widget.jobId;
-    getAvailablWorkers(jobId, (List<dynamic> availWorkerList) {
+    getAvailablWorkers(jobId, (List<dynamic> matchedWorkerList) {
       setState(() {
-        workerList = availWorkerList;
+        workerList = matchedWorkerList;
       });
     });
   }
@@ -79,7 +79,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
           var jobStartTime = jobData['day_start_time'];
           var jobEndTime = jobData['day_end_time'];
           // var jobId = jobData['job_id'];
-          // var location = jobData['location'];
+          double jobLat = jobData['latitude'];
+          double jobLong = jobData['longitude'];
 
           DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
           String day = DateFormat('EEEE').format(date);
@@ -123,7 +124,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
               if (data != null) {
                 // Convert the Map<dynamic, dynamic> to a List
-                List<dynamic> availWorkerList = [];
+                List<Map<String, dynamic>> availWorkerList = [];
                 data.forEach((key, value) {
                   int availStartTime =
                       stringTimeToMins(value['day_start_time']);
@@ -133,15 +134,20 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                       (availEndTime >= stringTimeToMins(jobEndTime))) {
                     String workerId = value['worker_id'];
                     int miles = value['miles'];
-                    availWorkerList.add([workerId, miles]);
+                    availWorkerList.add({"workerId": workerId, "miles": miles});
                   }
                 });
 
                 // Now you have a list of jobs
                 print('Worker List: $availWorkerList');
 
-                for (List<dynamic> worker in availWorkerList) {
-                  String workerId = worker[0];
+                List<Map<String, dynamic>> matchedWorkerList = [];
+
+                for (var worker in availWorkerList) {
+                  String workerId =
+                      worker['workerId']; // Use the correct key for worker_id
+                  int miles = worker['miles']; // Use the correct key for miles
+
                   dbHandler
                       .child('Worker')
                       .orderByChild('worker_id')
@@ -150,62 +156,35 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                       .listen((event) {
                     print(
                         'Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
-
                     if (event.snapshot.value != null) {
+                      // Explicitly cast to Map<dynamic, dynamic>
                       Map<dynamic, dynamic>? data =
                           event.snapshot.value as Map<dynamic, dynamic>?;
                       if (data != null) {
-                        var jobKey = data.keys.first;
-                        var jobData = data[jobKey]; //WORKING HERE TO FINNISH LOCATION
+                        // Assuming there is only one entry, you can access it directly
+                        var workerKey = data.keys.first;
+                        var workerData = data[workerKey];
 
-                        var dateString = jobData['date'];
-                        // var companyId = jobData['company_id'];
-                        var jobStartTime = jobData['day_start_time'];
-                        var jobEndTime = jobData['day_end_time'];
-                        // var jobId = jobData['job_id'];
-                        // var location = jobData['location'];
+                        double lat = workerData['latitude'];
+                        double long = workerData['longitude'];
 
-                        DateTime date =
-                            DateFormat('dd-MM-yyyy').parse(dateString);
-                        String day = DateFormat('EEEE').format(date);
-                        //print('day');
-                        int dayId = 0;
-                        if (day == 'Monday') {
-                          dayId = 1;
-                        } else if (day == 'Tuesday') {
-                          dayId = 2;
-                        } else if (day == 'Wednesday') {
-                          dayId = 3;
-                        } else if (day == 'Thursday') {
-                          dayId = 4;
-                        } else if (day == 'Friday') {
-                          dayId = 5;
-                        } else if (day == 'Saturday') {
-                          dayId = 6;
-                        } else if (day == 'Sunday') {
-                          dayId = 7;
-                        } else {
-                          // error
-                          print('Invalid day');
+                        double actualDist =
+                            calculateDistance(jobLat, jobLong, lat, long);
+                        print(actualDist);
+
+                        double actualMiles = actualDist * 0.6214;
+
+                        if (actualMiles <= miles) {
+                          matchedWorkerList.add(
+                              {'workerId': workerId, 'miles': actualMiles.round()});
                         }
-
-                        // print("MEGAN IT WORKS");
-                        // print("Job ID: $jobId");
-                        // print(dateString);
-                        // print("Company ID: $companyId");
-                        // print("Day Start Time: $dayStartTime");
-                        // print("Day End Time: $dayEndTime");
-                      } else {
-                        print(
-                            "MEGAN IT fails: Data is not in the expected format");
                       }
-                    } else {
-                      print("MEGAN IT fails: No data found for Job ID: $jobId");
                     }
+                    print("megan this is a sucess");
+                    print(matchedWorkerList);
+                    getList(matchedWorkerList);
                   });
                 }
-
-                getList(availWorkerList); // TO DO RETURN MAIN LIST
               }
             } else {
               // Handle the case when there are no jobs with day_id equal to 1
@@ -244,12 +223,13 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                   itemCount: workerList.length,
                   itemBuilder: (context, index) {
                     // Assuming each worker is represented as a Map
-                    List<Object> worker = workerList[index];
+                    Map<String, dynamic> worker = workerList[index];
 
                     return InkWell(
                       onTap: () {
                         // Handle the click on the list item
-                        print('Clicked on worker: ${worker[0]}');
+                        print(
+                            'Clicked on worker: ${worker['workerId']} they are ${worker['miles']} miles away');
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
@@ -274,9 +254,9 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
               PushButton(
                   buttonSize: 60,
                   text: "test",
-                  onPress: () => getAvailablWorkers(jobId, (availWorkerList) {
+                  onPress: () => getAvailablWorkers(jobId, (matchedWorkerList) {
                         setState(() {
-                          workerList = availWorkerList;
+                          workerList = matchedWorkerList;
                         });
                       })),
             ],
