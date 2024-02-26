@@ -112,7 +112,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
   }
 
   Future<void> addJobDb(String date, String companyId, TimeOfDay startTime,
-      TimeOfDay endTime, String location, BuildContext context) async {
+      TimeOfDay endTime, double lat, double long, BuildContext context) async {
     String jobId = const Uuid().v4();
 
     Map<String, dynamic> job = {
@@ -121,7 +121,8 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
       "date": date,
       "job_start_time": startTime.format(context),
       "job_end_time": endTime.format(context),
-      "location": location,
+      "latitude": lat,
+      "longitude": long,
     };
 
     try {
@@ -209,7 +210,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
               text: 'Create Job',
               onPress: () async {
                 addJobDb(
-                    dateString, companyId, startTime, endTime, "po1", context);
+                    dateString, companyId, startTime, endTime, 1.0000, 1.000, context);
                     
               },
             ),

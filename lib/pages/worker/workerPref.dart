@@ -61,23 +61,6 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  // Future<Map<String, String>> getCurrentSLocation() async {
-  //   try {
-  //     Position position = await Geolocator.getCurrentPosition(
-  //       desiredAccuracy: LocationAccuracy.best,
-  //       forceAndroidLocationManager: true,
-  //     );
-
-  //     String latitude = position.latitude.toString();
-  //     String longitude = position.longitude.toString();
-
-  //     return {'latitude': latitude, 'longitude': longitude};
-  //   } catch (e) {
-  //     print(e);
-  //     // You might want to handle the error accordingly, for example, returning default strings.
-  //     return {'latitude': '0.0', 'longitude': '0.0'};
-  //   }
-  // }
 
   Future<String> getPlacemarks(double lat, double long) async {
     try {
