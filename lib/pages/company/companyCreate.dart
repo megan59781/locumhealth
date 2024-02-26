@@ -132,29 +132,6 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     }
   }
 
-  // void workersToJobFilter(String jobStart, String jobEnd) {
-  // dbhandler.child('Availability');
-
-//   //orderByChild('day_end_time')
-
-//   dbhandler
-//       .orderByChild('day_start_time')
-//       .startAt(jobStart)
-//       .endAt(jobEnd)
-//       .onValue
-//       .listen((event) {
-//         DataSnapshot dataSnapshot = event.snapshot;
-//         Map<dynamic, dynamic> values = dataSnapshot.value;
-//         values.forEach((key, values) {
-//           print('Key: $key');
-//           print('Name: ${values['day_start_time']}');
-//           print('Email: ${values['day_end_time']}');
-//           print('Time: ${values['miles']}');
-//         });
-//       });
-// }
-
-
   @override
   Widget build(BuildContext context) {
     String dateString = DateFormat('dd-MM-yyyy').format(selectedDate);
@@ -233,6 +210,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
               onPress: () async {
                 addJobDb(
                     dateString, companyId, startTime, endTime, "po1", context);
+                    
               },
             ),
           ]),

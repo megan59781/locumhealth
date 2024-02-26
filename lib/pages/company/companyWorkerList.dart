@@ -1,9 +1,11 @@
 import 'dart:math' show cos, sqrt, asin;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp/pages/company/companyNav.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class CompanyWorkerList extends StatefulWidget {
   final String companyId;
@@ -17,7 +19,7 @@ class CompanyWorkerList extends StatefulWidget {
 
 class CompanyWorkerListState extends State<CompanyWorkerList> {
   List<dynamic> workerList = [];
-  DatabaseReference dbHandler = FirebaseDatabase.instance.ref();
+  DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
 
   @override
   void initState() {
@@ -57,7 +59,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     print("Megan this is lat long calc");
     print(calculateDistance(50.78770, 1.084350, 50.798870, 0.988060));
 
-    dbHandler
+    dbhandler
         .child('Jobs')
         .orderByChild('job_id')
         .equalTo(jobId)
@@ -111,7 +113,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
           // print("Company ID: $companyId");
           // print("Day Start Time: $dayStartTime");
           // print("Day End Time: $dayEndTime");
-          dbHandler
+          dbhandler
               .child('Availability')
               .orderByChild('day_id')
               .equalTo(dayId)
@@ -148,7 +150,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                       worker['workerId']; // Use the correct key for worker_id
                   int miles = worker['miles']; // Use the correct key for miles
 
-                  dbHandler
+                  dbhandler
                       .child('Worker')
                       .orderByChild('worker_id')
                       .equalTo(workerId)
@@ -175,8 +177,10 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                         double actualMiles = actualDist * 0.6214;
 
                         if (actualMiles <= miles) {
-                          matchedWorkerList.add(
-                              {'workerId': workerId, 'miles': actualMiles.round()});
+                          matchedWorkerList.add({
+                            'workerId': workerId,
+                            'miles': actualMiles.round()
+                          });
                         }
                       }
                     }
@@ -199,6 +203,27 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         print("MEGAN IT fails: No data found for Job ID: $jobId");
       }
     });
+  }
+
+  Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
+      BuildContext context) async {
+    String assignId = const Uuid().v4();
+
+    Map<String, dynamic> assignJob = {
+      "assign_job_id": assignId,
+      "job_id": jobId,
+      "company_id": companyId,
+      "worker_id": workerId,
+      "worker_job_complete": false,
+      "company_job_complete": false,
+    };
+
+    try {
+      await dbhandler.child("Assigned Jobs").push().set(assignJob);
+      //Navigator.of(context).pop();
+    } catch (error) {
+      print("Error saving to Firebase: $error");
+    }
   }
 
   @override
@@ -226,10 +251,16 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                     Map<String, dynamic> worker = workerList[index];
 
                     return InkWell(
-                      onTap: () {
-                        // Handle the click on the list item
+                      onTap: () async {
                         print(
                             'Clicked on worker: ${worker['workerId']} they are ${worker['miles']} miles away');
+                        addAssignJobDb(widget.jobId, widget.companyId,
+                            worker['workerId'], context);
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => CompanyNavigationBar(
+                                    companyId: widget.companyId)));
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
