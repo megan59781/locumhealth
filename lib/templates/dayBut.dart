@@ -32,11 +32,6 @@ class _DayButtonState extends State<DayButton> {
               color: Colors.blueGrey[200], // button color
               child: InkWell(
                 onTap: () {
-                  // Toggle the state on button press
-                  setState(() {
-                    clicked = !clicked;
-                  });
-
                   // Call the provided onPress function
                   if (widget.onPress != null) {
                     widget.onPress!();

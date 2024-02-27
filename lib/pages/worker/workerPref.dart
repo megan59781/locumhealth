@@ -8,9 +8,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class WorkerPreference extends StatefulWidget {
-  final String worker_id;
+  final String workerId;
 
-  const WorkerPreference({super.key, required this.worker_id});
+  const WorkerPreference({super.key, required this.workerId});
 
   @override
   State createState() => WorkerPreferenceState();
@@ -43,7 +43,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   TimeOfDay sunStartTime = const TimeOfDay(hour: 0, minute: 0);
   TimeOfDay sunEndTime = const TimeOfDay(hour: 0, minute: 0);
 
-  Future<List<double>> getCurrentLocation() async {
+  Future<List<double>> getCurrentLatLong() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
@@ -61,23 +61,6 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  // Future<Map<String, String>> getCurrentSLocation() async {
-  //   try {
-  //     Position position = await Geolocator.getCurrentPosition(
-  //       desiredAccuracy: LocationAccuracy.best,
-  //       forceAndroidLocationManager: true,
-  //     );
-
-  //     String latitude = position.latitude.toString();
-  //     String longitude = position.longitude.toString();
-
-  //     return {'latitude': latitude, 'longitude': longitude};
-  //   } catch (e) {
-  //     print(e);
-  //     // You might want to handle the error accordingly, for example, returning default strings.
-  //     return {'latitude': '0.0', 'longitude': '0.0'};
-  //   }
-  // }
 
   Future<String> getPlacemarks(double lat, double long) async {
     try {
@@ -254,7 +237,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
   @override
   Widget build(BuildContext context) {
-    String workerId = widget.worker_id;
+    String workerId = widget.workerId;
     return MaterialApp(
         home: Scaffold(
       backgroundColor: Colors.brown[100],
@@ -393,7 +376,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 colour: Colors.black,
               ),
               FutureBuilder<List<double>>(
-                future: getCurrentLocation(),
+                future: getCurrentLatLong(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
