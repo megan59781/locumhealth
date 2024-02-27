@@ -284,12 +284,14 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
               const SizedBox(height: 100),
               PushButton(
                   buttonSize: 60,
-                  text: "test",
-                  onPress: () => getAvailablWorkers(jobId, (matchedWorkerList) {
-                        setState(() {
-                          workerList = matchedWorkerList;
-                        });
-                      })),
+                  text: "Go Back",
+                  onPress: () async {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CompanyNavigationBar(
+                                companyId: widget.companyId)));
+                  }),
             ],
           ),
         ),

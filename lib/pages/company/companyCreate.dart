@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/dateTimeText.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
@@ -111,8 +112,15 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     );
   }
 
-  Future<void> addJobDb(String date, String companyId, TimeOfDay startTime,
-      TimeOfDay endTime, double lat, double long, BuildContext context) async {
+  Future<void> addJobDb(
+      String date,
+      String companyId,
+      TimeOfDay startTime,
+      TimeOfDay endTime,
+      double lat,
+      double long,
+      BuildContext context,
+      Function(String theJobId) getJobId) async {
     String jobId = const Uuid().v4();
 
     Map<String, dynamic> job = {
@@ -127,6 +135,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
 
     try {
       await dbhandler.child("Jobs").push().set(job);
+      getJobId(jobId);
       //Navigator.of(context).pop();
     } catch (error) {
       print("Error saving to Firebase: $error");
@@ -137,6 +146,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
   Widget build(BuildContext context) {
     String dateString = DateFormat('dd-MM-yyyy').format(selectedDate);
     String companyId = widget.companyId;
+    String jobId = "";
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -209,9 +219,17 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
               buttonSize: 60,
               text: 'Create Job',
               onPress: () async {
-                addJobDb(
-                    dateString, companyId, startTime, endTime, 1.0000, 1.000, context);
-                    
+                addJobDb(dateString, companyId, startTime, endTime, 1.0000,
+                    1.000, context, (String getJobId) {
+                  setState(() {
+                    jobId = getJobId;
+                  });
+                });
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CompanyWorkerList(
+                            companyId: widget.companyId, jobId: jobId)));
               },
             ),
           ]),
