@@ -19,9 +19,11 @@ class WorkerJobState extends State<WorkerJob> {
   void initState() {
     super.initState();
     String workerId = widget.workerId;
-    getJobs(workerId, (List<dynamic> jobDetailList) {
-      setState(() {
-        jobList = jobDetailList;
+    setState(() {
+      getJobs(workerId, (List<dynamic> jobDetailList) {
+        setState(() {
+          jobList = jobDetailList;
+        });
       });
     });
   }

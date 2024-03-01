@@ -26,9 +26,11 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     super.initState();
     print("this is where job is passed");
     print(widget.jobId);
-    getAvailablWorkers(widget.jobId, (List<dynamic> matchedWorkerList) {
-      setState(() {
-        workerList = matchedWorkerList;
+    setState(() {
+      getAvailablWorkers(widget.jobId, (List<dynamic> matchedWorkerList) {
+        setState(() {
+          workerList = matchedWorkerList;
+        });
       });
     });
   }

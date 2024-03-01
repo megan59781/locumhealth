@@ -309,7 +309,9 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                 text: currentLocation,
                 icon: const Icon(Icons.map_outlined),
                 onPress: () {
-                  locationSelector(context);
+                  setState(() {
+                    locationSelector(context);
+                  });
                 },
               ),
             ),
