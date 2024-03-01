@@ -42,49 +42,56 @@ class LoginState extends State<Login> {
     }
   }
 
-  // Future<bool> workerExists(user) async {
-  //   return await FirebaseFirestore.instance
-  //       .collection("Worker")
-  //       .where("worker_id", isEqualTo: user.uid)
-  //       .get()
-  //       .then((value) => value.size > 0 ? true : false);
-  // }
-
   Future<void> addWorkerDb(user) async {
-    // bool workerRes = await workerExists(user);
-    // if (workerRes == false){
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(user.uid)
+        .onValue
+        .listen((event) async {
+      print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
+      if (event.snapshot.value == null) {
+        List<double> location = await getCurrentLatLong();
 
-    List<double> location = await getCurrentLatLong();
-
-    DateTime bday = DateTime(2000, 1, 1);
-    Map<String, dynamic> worker = {
-      "worker_id": user.uid,
-      "name": user.displayName.toString(),
-      "email": user.email.toString(),
-      "bday": bday.toIso8601String(),
-      "latitude": location[0],
-      "longitude": location[1],
-    };
-    
-    dbhandler.child("Worker").push().set(worker).then((value) {
-      //Navigator.of(context).pop();
-    }).catchError((error) {
-      print("Error saving to Firebase: $error");
+        DateTime bday = DateTime(2000, 1, 1);
+        Map<String, dynamic> worker = {
+          "worker_id": user.uid,
+          "name": user.displayName.toString(),
+          "email": user.email.toString(),
+          "bday": bday.toIso8601String(),
+          "latitude": location[0],
+          "longitude": location[1],
+        };
+        dbhandler.child("Worker").push().set(worker).then((value) {
+          //Navigator.of(context).pop();
+        }).catchError((error) {
+          print("Error saving to Firebase: $error");
+        });
+      }
     });
   }
 
   Future<void> addCompanyDb(user) async {
-    // bool workerRes = await workerExists(user);
-    // if (workerRes == false){
-    Map<String, dynamic> company = {
-      "company_id": user.uid,
-      "name": user.displayName.toString(),
-      "email": user.email.toString(),
-    };
-    dbhandler.child("Company").push().set(company).then((value) {
-      //Navigator.of(context).pop();
-    }).catchError((error) {
-      print("Error saving to Firebase: $error");
+    dbhandler
+        .child('Company')
+        .orderByChild('company_id')
+        .equalTo(user.uid)
+        .onValue
+        .listen((event) {
+      print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
+      if (event.snapshot.value == null) {
+        Map<String, dynamic> company = {
+          "company_id": user.uid,
+          "name": user.displayName.toString(), //TO DO ASK NAME??
+          "email": user.email.toString(),
+        };
+        dbhandler.child("Company").push().set(company).then((value) {
+          print("works company");
+          //Navigator.of(context).pop();
+        }).catchError((error) {
+          print("Error saving to Firebase: $error");
+        });
+      }
     });
   }
 
@@ -126,7 +133,11 @@ class LoginState extends State<Login> {
                 User? user = await _handleSignIn();
                 if (user != null) {
                   print('correct');
-                  //addWorkerDb(user);
+                  addCompanyDb(user);
+                  dbhandler
+                      .child("Company")
+                      .child("XggFLVzCkjSFSmeqhrnVKRQw8bo1")
+                      .remove();
                   Navigator.push(
                       context,
                       MaterialPageRoute(

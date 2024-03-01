@@ -94,8 +94,8 @@ class CompanyJobState extends State<CompanyJob> {
                   var jobData = data[jobKey];
 
                   var date = jobData['date'];
-                  var jobStartTime = jobData['day_start_time'];
-                  var jobEndTime = jobData['day_end_time'];
+                  var jobStartTime = jobData['job_start_time'];
+                  var jobEndTime = jobData['job_end_time'];
 
                   // TO DO CACLULATE AND DISPLAY LOCTAION WITH JOB
                   double lat = jobData['latitude'];

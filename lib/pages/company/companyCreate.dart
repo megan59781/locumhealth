@@ -11,7 +11,7 @@ import 'package:uuid/uuid.dart';
 class CompanyCreateJob extends StatefulWidget {
   final String companyId;
 
-  CompanyCreateJob({super.key, required this.companyId});
+  const CompanyCreateJob({super.key, required this.companyId});
 
   @override
   State createState() => CompanyCreateJobState();
@@ -319,16 +319,18 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
               text: 'Create Job',
               onPress: () async {
                 addJobDb(dateString, companyId, startTime, endTime, lat, long,
-                    context, (String getJobId) {
+                    context, (value) {
                   setState(() {
-                    jobId = getJobId;
+                    jobId = value;
+                    print("check here");
+                    print(jobId);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CompanyWorkerList(
+                                companyId: widget.companyId, jobId: jobId)));
                   });
                 });
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => CompanyWorkerList(
-                            companyId: widget.companyId, jobId: jobId)));
               },
             ),
           ]),
