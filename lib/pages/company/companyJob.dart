@@ -19,9 +19,11 @@ class CompanyJobState extends State<CompanyJob> {
   void initState() {
     super.initState();
     String companyId = widget.companyId;
-    getJobs(companyId, (List<dynamic> jobDetailList) {
-      setState(() {
-        jobList = jobDetailList;
+    setState(() {
+      getJobs(companyId, (List<dynamic> jobDetailList) {
+        setState(() {
+          jobList = jobDetailList;
+        });
       });
     });
   }
@@ -35,10 +37,10 @@ class CompanyJobState extends State<CompanyJob> {
       if (placemarks.isNotEmpty) {
         address += placemarks.reversed.last.subLocality ?? '';
         address += ', ${placemarks.reversed.last.locality ?? ''}';
-        address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
+        // address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
         //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
         address += ', ${placemarks.reversed.last.postalCode ?? ''}';
-        address += ', ${placemarks.reversed.last.country ?? ''}';
+        // address += ', ${placemarks.reversed.last.country ?? ''}';
       }
 
       //print("Your Address for ($lat, $long) is: $address");
@@ -94,8 +96,8 @@ class CompanyJobState extends State<CompanyJob> {
                   var jobData = data[jobKey];
 
                   var date = jobData['date'];
-                  var jobStartTime = jobData['day_start_time'];
-                  var jobEndTime = jobData['day_end_time'];
+                  var jobStartTime = jobData['job_start_time'];
+                  var jobEndTime = jobData['job_end_time'];
 
                   // TO DO CACLULATE AND DISPLAY LOCTAION WITH JOB
                   double lat = jobData['latitude'];
@@ -104,14 +106,42 @@ class CompanyJobState extends State<CompanyJob> {
                   String location = await getPlacemarks(lat, long);
                   print(location);
 
-                  jobDetailsList.add({
-                    'jobId': jobId,
-                    'workerId': workerId,
-                    'date': date,
-                    'startTime': jobStartTime,
-                    'endTime': jobEndTime,
-                    'location': location,
+                  dbhandler
+                      .child('Worker')
+                      .orderByChild('worker_id')
+                      .equalTo(workerId)
+                      .onValue
+                      .listen((event) async {
+                    print('Worker Query output: ${event.snapshot.value}');
+                    if (event.snapshot.value != null) {
+                      Map<dynamic, dynamic>? data =
+                          event.snapshot.value as Map<dynamic, dynamic>?;
+                      if (data != null) {
+                        var workerKey = data.keys.first;
+                        var workerData = data[workerKey];
+
+                        var worker = workerData['name'];
+
+                        jobDetailsList.add({
+                          'jobId': jobId,
+                          'worker': worker,
+                          'date': date,
+                          'startTime': jobStartTime,
+                          'endTime': jobEndTime,
+                          'location': location,
+                        });
+                      }
+                    }
                   });
+
+                  // jobDetailsList.add({
+                  //   'jobId': jobId,
+                  //   'workerId': workerId,
+                  //   'date': date,
+                  //   'startTime': jobStartTime,
+                  //   'endTime': jobEndTime,
+                  //   'location': location,
+                  // });
                 }
               }
             });
@@ -155,7 +185,8 @@ class CompanyJobState extends State<CompanyJob> {
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
-                        print('Clicked on worker: ${job['workerId']} location of job: ${job['location']} ');
+                        print(
+                            'Clicked on worker: ${job['worker']} location of job: ${job['location']} ');
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
@@ -167,9 +198,15 @@ class CompanyJobState extends State<CompanyJob> {
                         ),
                         child: ListTile(
                           title: DisplayText(
-                              text: "job: $index",
-                              fontSize: 24,
+                              text:
+                                  "Job: ${index + 1} (Worker ${job['worker']})", //${job['workerId']})", TO DO PUT WORKER NAME
+                              fontSize: 20,
                               colour: Colors.black),
+                          subtitle: DisplayText(
+                              text:
+                                  "Date: ${job['date']} \nTime: ${job['startTime']} to ${job['endTime']} \nLocation: ${job['location']}",
+                              fontSize: 18,
+                              colour: Colors.deepPurple),
                         ),
                       ),
                     );

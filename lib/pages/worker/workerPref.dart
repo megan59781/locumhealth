@@ -21,6 +21,11 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   int currentMilesVal = 1;
   TimeOfDay selectedTime = TimeOfDay.now();
 
+  final TextEditingController locationController = TextEditingController();
+  double lat = 0.0;
+  double long = 0.0;
+  String currentLocation = "get location";
+
   bool selMon = false;
   TimeOfDay monStartTime = const TimeOfDay(hour: 0, minute: 0);
   TimeOfDay monEndTime = const TimeOfDay(hour: 0, minute: 0);
@@ -61,7 +66,6 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-
   Future<String> getPlacemarks(double lat, double long) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(lat, long);
@@ -101,6 +105,56 @@ class WorkerPreferenceState extends State<WorkerPreference> {
       //Navigator.of(context).pop();
     } catch (error) {
       print("Error saving to Firebase: $error");
+    }
+  }
+
+  Future<void> locationSelector(BuildContext context) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Location'),
+          content: TextField(
+            controller: locationController,
+            decoration: const InputDecoration(labelText: 'Location'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                getLocationCoordinates(context);
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> getLocationCoordinates(BuildContext context) async {
+    final String location = locationController.text;
+
+    try {
+      List<Location> locations = await locationFromAddress(location);
+      if (locations.isNotEmpty) {
+        lat = locations[0].latitude;
+        long = locations[0].longitude;
+        currentLocation =
+            await getPlacemarks(lat, long); //pass through placemarks
+        print(lat);
+        print(long);
+      } else {
+        print('No location found for: $location');
+      }
+    } catch (e) {
+      print('Error during geocoding: $e');
     }
   }
 
@@ -412,9 +466,12 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               ),
               const SizedBox(height: 20),
               PushButton(
-                  buttonSize: 60,
-                  text: 'My location is wrong',
-                  onPress: () => null),
+                buttonSize: 60,
+                text: 'My location is wrong', // TO DO MAKE SHOW MAIN LOCATION
+                onPress: () {
+                  locationSelector(context);
+                },
+              ),
               const SizedBox(height: 50),
               DisplayText(
                   text: "Maxium Miles Traveled: $currentMilesVal",
@@ -436,25 +493,32 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 text: 'Submit Preferences',
                 onPress: () async {
                   if (selMon) {
-                    addAvailableDb(1, workerId, monStartTime, monEndTime, context);
+                    addAvailableDb(
+                        1, workerId, monStartTime, monEndTime, context);
                   }
                   if (selTue) {
-                    addAvailableDb(2, workerId, tueStartTime, tueEndTime, context);
+                    addAvailableDb(
+                        2, workerId, tueStartTime, tueEndTime, context);
                   }
                   if (selWed) {
-                    addAvailableDb(3, workerId, wedStartTime, wedEndTime, context);
+                    addAvailableDb(
+                        3, workerId, wedStartTime, wedEndTime, context);
                   }
                   if (selThu) {
-                    addAvailableDb(4, workerId, thuStartTime, thuEndTime, context);
+                    addAvailableDb(
+                        4, workerId, thuStartTime, thuEndTime, context);
                   }
                   if (selFri) {
-                    addAvailableDb(5, workerId, friStartTime, friEndTime, context);
+                    addAvailableDb(
+                        5, workerId, friStartTime, friEndTime, context);
                   }
                   if (selSat) {
-                    addAvailableDb(6, workerId, satStartTime, satEndTime, context);
+                    addAvailableDb(
+                        6, workerId, satStartTime, satEndTime, context);
                   }
                   if (selSun) {
-                    addAvailableDb(7, workerId, sunStartTime, sunEndTime, context);
+                    addAvailableDb(
+                        7, workerId, sunStartTime, sunEndTime, context);
                   }
                 },
               ),

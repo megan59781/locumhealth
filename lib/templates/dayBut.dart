@@ -6,11 +6,11 @@ class DayButton extends StatefulWidget {
   final Function()? onPress;
 
   const DayButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.selected,
     required this.onPress,
-  }) : super(key: key);
+  });
 
   @override
   _DayButtonState createState() => _DayButtonState();

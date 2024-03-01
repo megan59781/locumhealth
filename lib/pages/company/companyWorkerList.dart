@@ -24,10 +24,13 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
   @override
   void initState() {
     super.initState();
-    String jobId = widget.jobId;
-    getAvailablWorkers(jobId, (List<dynamic> matchedWorkerList) {
-      setState(() {
-        workerList = matchedWorkerList;
+    print("this is where job is passed");
+    print(widget.jobId);
+    setState(() {
+      getAvailablWorkers(widget.jobId, (List<dynamic> matchedWorkerList) {
+        setState(() {
+          workerList = matchedWorkerList;
+        });
       });
     });
   }
@@ -56,8 +59,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
   void getAvailablWorkers(
       String jobId, Function(List<dynamic> workerList) getList) {
-    print("Megan this is lat long calc");
-    print(calculateDistance(50.78770, 1.084350, 50.798870, 0.988060));
+    print("Print this function is being passed");
+    print(jobId);
 
     dbhandler
         .child('Jobs')
@@ -78,8 +81,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
           var dateString = jobData['date'];
           // var companyId = jobData['company_id'];
-          var jobStartTime = jobData['day_start_time'];
-          var jobEndTime = jobData['day_end_time'];
+          var jobStartTime = jobData['job_start_time'];
+          var jobEndTime = jobData['job_end_time'];
           // var jobId = jobData['job_id'];
           double jobLat = jobData['latitude'];
           double jobLong = jobData['longitude'];
@@ -228,7 +231,6 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
   @override
   Widget build(BuildContext context) {
-    String jobId = widget.jobId;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -284,12 +286,14 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
               const SizedBox(height: 100),
               PushButton(
                   buttonSize: 60,
-                  text: "test",
-                  onPress: () => getAvailablWorkers(jobId, (matchedWorkerList) {
-                        setState(() {
-                          workerList = matchedWorkerList;
-                        });
-                      })),
+                  text: "Go Back",
+                  onPress: () async {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CompanyNavigationBar(
+                                companyId: widget.companyId)));
+                  }),
             ],
           ),
         ),
