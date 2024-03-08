@@ -9,8 +9,14 @@ import 'package:numberpicker/numberpicker.dart';
 
 class WorkerPreference extends StatefulWidget {
   final String workerId;
+  final double lat;
+  final double long;
 
-  const WorkerPreference({super.key, required this.workerId});
+  const WorkerPreference(
+      {super.key,
+      required this.workerId,
+      required this.lat,
+      required this.long});
 
   @override
   State createState() => WorkerPreferenceState();
@@ -20,11 +26,14 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
   int currentMilesVal = 1;
   TimeOfDay selectedTime = TimeOfDay.now();
-
-  final TextEditingController locationController = TextEditingController();
   double lat = 0.0;
   double long = 0.0;
-  String currentLocation = "get location";
+
+  String currentLocation = "get";
+
+  final TextEditingController locationController = TextEditingController();
+
+  //"get location";
 
   bool selMon = false;
   TimeOfDay monStartTime = const TimeOfDay(hour: 0, minute: 0);
@@ -48,23 +57,23 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   TimeOfDay sunStartTime = const TimeOfDay(hour: 0, minute: 0);
   TimeOfDay sunEndTime = const TimeOfDay(hour: 0, minute: 0);
 
-  Future<List<double>> getCurrentLatLong() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        forceAndroidLocationManager: true,
-      );
+  // Future<List<double>> getCurrentLatLong() async {
+  //   try {
+  //     Position position = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: LocationAccuracy.best,
+  //       forceAndroidLocationManager: true,
+  //     );
 
-      double latitude = position.latitude;
-      double longitude = position.longitude;
+  //     double latitude = position.latitude;
+  //     double longitude = position.longitude;
 
-      return [latitude, longitude];
-    } catch (e) {
-      //print(e);
-      // You might want to handle the error accordingly, for example, returning a default location.
-      return [0.0, 0.0];
-    }
-  }
+  //     return [latitude, longitude];
+  //   } catch (e) {
+  //     //print(e);
+  //     // You might want to handle the error accordingly, for example, returning a default location.
+  //     return [0.0, 0.0];
+  //   }
+  // }
 
   Future<String> getPlacemarks(double lat, double long) async {
     try {
@@ -200,6 +209,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         });
   }
 
+  // function handles time selected and update _timeSelector widgit
   Future<TimeOfDay> _selectTime(TextEditingController controller) async {
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
@@ -274,7 +284,6 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               ),
               child: const Text('Submit'),
               onPressed: () {
-                // TO DO SAVE TIMES
                 TimeOfDay startTime = TimeOfDay.fromDateTime(
                     DateTime.parse("2024-01-01 ${startTimeController.text}"));
                 TimeOfDay endTime = TimeOfDay.fromDateTime(
@@ -292,6 +301,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   @override
   Widget build(BuildContext context) {
     String workerId = widget.workerId;
+    currentLocation = getPlacemarks(widget.lat, widget.long) as String;
     return MaterialApp(
         home: Scaffold(
       backgroundColor: Colors.brown[100],
@@ -429,41 +439,45 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 fontSize: 20,
                 colour: Colors.black,
               ),
-              FutureBuilder<List<double>>(
-                future: getCurrentLatLong(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  } else if (snapshot.hasError || snapshot.data == null) {
-                    return const DisplayText(
-                      text: 'Error getting location',
-                      fontSize: 20,
-                      colour: Colors.deepPurple,
-                    );
-                  } else {
-                    double lat = snapshot.data![0];
-                    double long = snapshot.data![1];
-                    return FutureBuilder<String>(
-                      future: getPlacemarks(lat, long),
-                      builder: (context, locateSnapshot) {
-                        if (locateSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (locateSnapshot.hasError) {
-                          return Text('Error: ${locateSnapshot.error}');
-                        } else {
-                          // Data has been fetched successfully, use locateSnapshot.data as a String
-                          return DisplayText(
-                            text: locateSnapshot.data!,
-                            fontSize: 20,
-                            colour: Colors.deepPurple,
-                          );
-                        }
-                      },
-                    );
-                  }
-                },
-              ),
+              // FutureBuilder<List<double>>(
+              //   future: getCurrentLatLong(),
+              //   builder: (context, snapshot) {
+              //     if (snapshot.connectionState == ConnectionState.waiting) {
+              //       return const CircularProgressIndicator();
+              //     } else if (snapshot.hasError || snapshot.data == null) {
+              //       return const DisplayText(
+              //         text: 'Error getting location',
+              //         fontSize: 20,
+              //         colour: Colors.deepPurple,
+              //       );
+              //     } else {
+              //       double lat = snapshot.data![0];
+              //       double long = snapshot.data![1];
+              //       return FutureBuilder<String>(
+              //         future: getPlacemarks(lat, long),
+              //         builder: (context, locateSnapshot) {
+              //           if (locateSnapshot.connectionState ==
+              //               ConnectionState.waiting) {
+              //             return const CircularProgressIndicator();
+              //           } else if (locateSnapshot.hasError) {
+              //             return Text('Error: ${locateSnapshot.error}');
+              //           } else {
+              //             // Data has been fetched successfully, use locateSnapshot.data as a String
+              //             return DisplayText(
+              //               text: locateSnapshot.data!,
+              //               fontSize: 20,
+              //               colour: Colors.deepPurple,
+              //             );
+              //     }
+              //   },
+              // );
+              //     }
+              //   },
+              // ),
+              DisplayText(
+                  text: currentLocation,
+                  fontSize: 20,
+                  colour: Colors.deepPurple),
               const SizedBox(height: 20),
               PushButton(
                 buttonSize: 60,

@@ -1,15 +1,14 @@
 //import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/pages/company/companyNav.dart';
 import 'package:fyp/pages/worker/workerNav.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/googleBut.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
-//FirebaseAuth.instance.signOut()
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -22,7 +21,8 @@ class LoginState extends State<Login> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
-  late String works;
+
+  
 
   Future<List<double>> getCurrentLatLong() async {
     try {
@@ -95,6 +95,7 @@ class LoginState extends State<Login> {
     });
   }
 
+  // function to verfiy google account and return user info if valid
   Future<User?> _handleSignIn() async {
     try {
       GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
@@ -111,7 +112,7 @@ class LoginState extends State<Login> {
 
       return user;
     } catch (error) {
-      //print(error);
+      print(error);
       return null;
     }
   }
@@ -133,11 +134,6 @@ class LoginState extends State<Login> {
                 User? user = await _handleSignIn();
                 if (user != null) {
                   print('correct');
-                  addCompanyDb(user);
-                  dbhandler
-                      .child("Company")
-                      .child("XggFLVzCkjSFSmeqhrnVKRQw8bo1")
-                      .remove();
                   Navigator.push(
                       context,
                       MaterialPageRoute(
