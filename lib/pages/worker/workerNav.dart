@@ -9,7 +9,8 @@ class WorkerNavigationBar extends StatefulWidget {
   const WorkerNavigationBar({super.key, required this.workerId});
 
   @override
-  State<WorkerNavigationBar> createState() => WorkerNavigationBarState(workerId: workerId);
+  State<WorkerNavigationBar> createState() =>
+      WorkerNavigationBarState(workerId: workerId);
 }
 
 class WorkerNavigationBarState extends State<WorkerNavigationBar> {

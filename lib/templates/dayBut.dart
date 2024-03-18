@@ -29,7 +29,7 @@ class _DayButtonState extends State<DayButton> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(18),
             child: Material(
-              color: Colors.blueGrey[200], // button color
+              color: Colors.blueGrey[50], // button color
               child: InkWell(
                 onTap: () {
                   // Call the provided onPress function

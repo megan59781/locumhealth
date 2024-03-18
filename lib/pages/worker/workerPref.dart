@@ -4,19 +4,13 @@ import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:geolocator/geolocator.dart';
+//import 'package:geolocator/geolocator.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class WorkerPreference extends StatefulWidget {
   final String workerId;
-  final double lat;
-  final double long;
 
-  const WorkerPreference(
-      {super.key,
-      required this.workerId,
-      required this.lat,
-      required this.long});
+  const WorkerPreference({super.key, required this.workerId});
 
   @override
   State createState() => WorkerPreferenceState();
@@ -167,6 +161,38 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
+  Future<String> getLocation(workerId) async {
+  String location = "fail";
+
+  await dbhandler
+      .child('Worker')
+      .orderByChild('worker_id')
+      .equalTo(workerId)
+      .onValue
+      .first
+      .then((event) async {
+        print('worker Query output: ${event.snapshot.value}');
+        if (event.snapshot.value != null) {
+          Map<dynamic, dynamic>? data =
+              event.snapshot.value as Map<dynamic, dynamic>?;
+          if (data != null) {
+            // Assuming there is only one entry, you can access it directly
+            var wKey = data.keys.first;
+            var wData = data[wKey];
+
+            double lat = wData['latitude'];
+            double long = wData['longitude'];
+
+            location = await getPlacemarks(lat, long);
+            print('HERE LOOK');
+            print(location);
+          }
+        }
+      });
+
+  return location;
+}
+
   Future<int?> _milesSelector(BuildContext context) async {
     return showDialog<int>(
         context: context,
@@ -301,10 +327,10 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   @override
   Widget build(BuildContext context) {
     String workerId = widget.workerId;
-    currentLocation = getPlacemarks(widget.lat, widget.long) as String;
+    //currentLocation = getLocation(workerId);
     return MaterialApp(
         home: Scaffold(
-      backgroundColor: Colors.brown[100],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: Column(
@@ -439,45 +465,28 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 fontSize: 20,
                 colour: Colors.black,
               ),
-              // FutureBuilder<List<double>>(
-              //   future: getCurrentLatLong(),
-              //   builder: (context, snapshot) {
-              //     if (snapshot.connectionState == ConnectionState.waiting) {
-              //       return const CircularProgressIndicator();
-              //     } else if (snapshot.hasError || snapshot.data == null) {
-              //       return const DisplayText(
-              //         text: 'Error getting location',
-              //         fontSize: 20,
-              //         colour: Colors.deepPurple,
-              //       );
-              //     } else {
-              //       double lat = snapshot.data![0];
-              //       double long = snapshot.data![1];
-              //       return FutureBuilder<String>(
-              //         future: getPlacemarks(lat, long),
-              //         builder: (context, locateSnapshot) {
-              //           if (locateSnapshot.connectionState ==
-              //               ConnectionState.waiting) {
-              //             return const CircularProgressIndicator();
-              //           } else if (locateSnapshot.hasError) {
-              //             return Text('Error: ${locateSnapshot.error}');
-              //           } else {
-              //             // Data has been fetched successfully, use locateSnapshot.data as a String
-              //             return DisplayText(
-              //               text: locateSnapshot.data!,
-              //               fontSize: 20,
-              //               colour: Colors.deepPurple,
-              //             );
-              //     }
-              //   },
-              // );
-              //     }
-              //   },
-              // ),
-              DisplayText(
-                  text: currentLocation,
-                  fontSize: 20,
-                  colour: Colors.deepPurple),
+              FutureBuilder<String>(
+                future: getLocation(workerId),
+                builder: (context, locateSnapshot) {
+                  if (locateSnapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (locateSnapshot.hasError) {
+                    return Text('Error: ${locateSnapshot.error}');
+                  } else {
+                    // Data has been fetched successfully, use locateSnapshot.data as a String
+                    return DisplayText(
+                      text: "",//locateSnapshot.data!,
+                      fontSize: 20,
+                      colour: Colors.deepPurple,
+                    );
+                  }
+                },
+              ),
+              // DisplayText(
+              //     text: currentLocation,
+              //     fontSize: 20,
+              //     colour: Colors.deepPurple),
               const SizedBox(height: 20),
               PushButton(
                 buttonSize: 60,

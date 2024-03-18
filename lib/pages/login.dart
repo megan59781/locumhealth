@@ -129,7 +129,7 @@ class LoginState extends State<Login> {
                 text: 'Company Login', fontSize: 40, colour: Colors.pink[900]),
             const SizedBox(height: 50),
             GoogleButton(
-              buttonSize: 125,
+              image: "google_icon_c.png",
               onPress: () async {
                 User? user = await _handleSignIn();
                 if (user != null) {
@@ -150,7 +150,7 @@ class LoginState extends State<Login> {
                 text: 'Worker Login', fontSize: 40, colour: Colors.teal[900]),
             const SizedBox(height: 50),
             GoogleButton(
-              buttonSize: 125,
+              image: "google_icon_w.png",
               onPress: () async {
                 User? user = await _handleSignIn();
                 if (user != null) {
