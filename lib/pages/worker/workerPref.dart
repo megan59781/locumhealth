@@ -207,8 +207,8 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  Future<void> updateAvailableDb(int dayId, String workerId, TimeOfDay startTime,
-      TimeOfDay endTime, BuildContext context) async {
+  Future<void> updateAvailableDb(int dayId, String workerId,
+      TimeOfDay startTime, TimeOfDay endTime, BuildContext context) async {
     dbhandler
         .child('Availability')
         .orderByChild('worker_id')
@@ -230,6 +230,66 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 print("Error saving to Firebase: $error");
               });
             }
+          });
+        }
+      } else {
+        // Handle error
+        print('error');
+      }
+    });
+  }
+
+  Future<void> updateWorkerMiles(
+      String workerId, int miles, BuildContext context) async {
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          data.forEach((key, value) {
+            dbhandler
+                .child("Worker")
+                .child(key)
+                .update({"miles": miles}).then((value) {
+              //Navigator.of(context).pop();
+            }).catchError((error) {
+              print("Error saving to Firebase: $error");
+            });
+          });
+        }
+      } else {
+        // Handle error
+        print('error');
+      }
+    });
+  }
+
+  Future<void> updateWorkerLocation(
+      String workerId, double lat, double long, BuildContext context) async {
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          data.forEach((key, value) {
+            dbhandler
+                .child("Worker")
+                .child(key)
+                .update({"latitude": lat, "longitude": long}).then((value) {
+              //Navigator.of(context).pop();
+            }).catchError((error) {
+              print("Error saving to Firebase: $error");
+            });
           });
         }
       } else {

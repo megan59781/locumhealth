@@ -60,6 +60,7 @@ class LoginState extends State<Login> {
           "bday": bday.toIso8601String(),
           "latitude": location[0],
           "longitude": location[1],
+          "miles": 0,
         };
         dbhandler.child("Worker").push().set(worker).then((value) {
           //Navigator.of(context).pop();
