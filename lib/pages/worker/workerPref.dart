@@ -148,11 +148,13 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
           double lat = wData['latitude'];
           double long = wData['longitude'];
+          int miles = wData['miles'];
 
           String location = await getPlacemarks(lat, long);
-          
+
           setState(() {
             currentLocation = location;
+            currentMilesVal = miles;
           });
         }
       }
@@ -195,16 +197,46 @@ class WorkerPreferenceState extends State<WorkerPreference> {
       "day_id": dayId,
       "worker_id": workerId,
       "day_start_time": startTime.format(context),
-      "day_end_time": endTime.format(context),
-      "miles": currentMilesVal,
+      "day_end_time": endTime.format(context)
     };
-
     try {
       await dbhandler.child("Availability").push().set(available);
       //Navigator.of(context).pop();
     } catch (error) {
       print("Error saving to Firebase: $error");
     }
+  }
+
+  Future<void> updateAvailableDb(int dayId, String workerId, TimeOfDay startTime,
+      TimeOfDay endTime, BuildContext context) async {
+    dbhandler
+        .child('Availability')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          data.forEach((key, value) {
+            if (value["day_id"] == dayId) {
+              dbhandler.child("Availability").child(key).update({
+                "day_start_time": startTime.format(context),
+                "day_end_time": endTime.format(context)
+              }).then((value) {
+                //Navigator.of(context).pop();
+              }).catchError((error) {
+                print("Error saving to Firebase: $error");
+              });
+            }
+          });
+        }
+      } else {
+        // Handle error
+        print('error');
+      }
+    });
   }
 
   Future<void> locationSelector(BuildContext context) async {
