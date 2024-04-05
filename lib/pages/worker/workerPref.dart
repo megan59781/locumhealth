@@ -23,7 +23,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   double lat = 0.0;
   double long = 0.0;
 
-  String currentLocation = "get";
+  String currentLocation = "to get";
 
   final TextEditingController locationController = TextEditingController();
 
@@ -51,23 +51,119 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   TimeOfDay sunStartTime = const TimeOfDay(hour: 0, minute: 0);
   TimeOfDay sunEndTime = const TimeOfDay(hour: 0, minute: 0);
 
-  // Future<List<double>> getCurrentLatLong() async {
-  //   try {
-  //     Position position = await Geolocator.getCurrentPosition(
-  //       desiredAccuracy: LocationAccuracy.best,
-  //       forceAndroidLocationManager: true,
-  //     );
+  Future<void> updateView(String workerId) async {
+    // updates the day button with the current day + times availability
+    dbhandler
+        .child('Availability')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((DatabaseEvent event) {
+      if (event.snapshot.value != null) {
+        // Explicitly cast to Map<dynamic, dynamic>
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
 
-  //     double latitude = position.latitude;
-  //     double longitude = position.longitude;
+        if (data != null) {
+          data.forEach((key, value) {
+            int dayId = value["day_id"];
+            TimeOfDay startTime = TimeOfDay.fromDateTime(
+                DateTime.parse("2024-01-01 ${value["day_start_time"]}"));
+            TimeOfDay endTime = TimeOfDay.fromDateTime(
+                DateTime.parse("2024-01-01 ${value["day_end_time"]}"));
+            switch (dayId) {
+              case 1:
+                setState(() {
+                  selMon = true;
+                  monStartTime = startTime;
+                  monEndTime = endTime;
+                });
+                break;
+              case 2:
+                setState(() {
+                  selTue = true;
+                  tueStartTime = startTime;
+                  tueEndTime = endTime;
+                });
+                break;
+              case 3:
+                setState(() {
+                  selWed = true;
+                  wedStartTime = startTime;
+                  wedEndTime = endTime;
+                });
+                break;
+              case 4:
+                setState(() {
+                  selThu = true;
+                  thuStartTime = startTime;
+                  thuEndTime = endTime;
+                });
+                break;
+              case 5:
+                setState(() {
+                  selFri = true;
+                  friStartTime = startTime;
+                  friEndTime = endTime;
+                });
+                break;
+              case 6:
+                setState(() {
+                  selSat = true;
+                  satStartTime = startTime;
+                  satEndTime = endTime;
+                });
+                break;
+              case 7:
+                setState(() {
+                  selSun = true;
+                  sunStartTime = startTime;
+                  sunEndTime = endTime;
+                });
+                break;
+              default:
+            }
+          });
+        }
+      } else {
+        // Handle error
+        print('error');
+      }
+    });
+    // updates the location text with current location
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .first
+        .then((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var wKey = data.keys.first;
+          var wData = data[wKey];
 
-  //     return [latitude, longitude];
-  //   } catch (e) {
-  //     //print(e);
-  //     // You might want to handle the error accordingly, for example, returning a default location.
-  //     return [0.0, 0.0];
-  //   }
-  // }
+          double lat = wData['latitude'];
+          double long = wData['longitude'];
+
+          String location = await getPlacemarks(lat, long);
+          
+          setState(() {
+            currentLocation = location;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    updateView(widget.workerId);
+  }
 
   Future<String> getPlacemarks(double lat, double long) async {
     try {
@@ -160,38 +256,6 @@ class WorkerPreferenceState extends State<WorkerPreference> {
       print('Error during geocoding: $e');
     }
   }
-
-  Future<String> getLocation(workerId) async {
-  String location = "fail";
-
-  await dbhandler
-      .child('Worker')
-      .orderByChild('worker_id')
-      .equalTo(workerId)
-      .onValue
-      .first
-      .then((event) async {
-        print('worker Query output: ${event.snapshot.value}');
-        if (event.snapshot.value != null) {
-          Map<dynamic, dynamic>? data =
-              event.snapshot.value as Map<dynamic, dynamic>?;
-          if (data != null) {
-            // Assuming there is only one entry, you can access it directly
-            var wKey = data.keys.first;
-            var wData = data[wKey];
-
-            double lat = wData['latitude'];
-            double long = wData['longitude'];
-
-            location = await getPlacemarks(lat, long);
-            print('HERE LOOK');
-            print(location);
-          }
-        }
-      });
-
-  return location;
-}
 
   Future<int?> _milesSelector(BuildContext context) async {
     return showDialog<int>(
@@ -327,7 +391,6 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   @override
   Widget build(BuildContext context) {
     String workerId = widget.workerId;
-    //currentLocation = getLocation(workerId);
     return MaterialApp(
         home: Scaffold(
       backgroundColor: Colors.white,
@@ -465,28 +528,10 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 fontSize: 20,
                 colour: Colors.black,
               ),
-              FutureBuilder<String>(
-                future: getLocation(workerId),
-                builder: (context, locateSnapshot) {
-                  if (locateSnapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  } else if (locateSnapshot.hasError) {
-                    return Text('Error: ${locateSnapshot.error}');
-                  } else {
-                    // Data has been fetched successfully, use locateSnapshot.data as a String
-                    return DisplayText(
-                      text: "",//locateSnapshot.data!,
-                      fontSize: 20,
-                      colour: Colors.deepPurple,
-                    );
-                  }
-                },
-              ),
-              // DisplayText(
-              //     text: currentLocation,
-              //     fontSize: 20,
-              //     colour: Colors.deepPurple),
+              DisplayText(
+                  text: currentLocation,
+                  fontSize: 20,
+                  colour: Colors.deepPurple),
               const SizedBox(height: 20),
               PushButton(
                 buttonSize: 60,
