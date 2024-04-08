@@ -666,7 +666,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               const SizedBox(height: 20),
               PushButton(
                 buttonSize: 60,
-                text: 'My location is wrong', // TO DO MAKE SHOW MAIN LOCATION
+                text: 'Change Location', // TO DO MAKE SHOW MAIN LOCATION
                 onPress: () {
                   locationSelector(context);
                 },
