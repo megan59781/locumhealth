@@ -96,43 +96,45 @@ class WorkerJobState extends State<WorkerJob> {
                   var jobData = data[jobKey];
 
                   var date = jobData['date'];
-                  var jobStartTime = jobData['job_start_time'];
-                  var jobEndTime = jobData['job_end_time'];
 
-                  // TO DO CACLULATE AND DISPLAY LOCTAION WITH JOB
-                  double lat = jobData['latitude'];
-                  double long = jobData['longitude'];
+                  if (DateTime.parse(date).isAfter(DateTime.now())) {
+                    var jobStartTime = jobData['job_start_time'];
+                    var jobEndTime = jobData['job_end_time'];
 
-                  String location = await getPlacemarks(lat, long);
-                  print(location);
+                    double lat = jobData['latitude'];
+                    double long = jobData['longitude'];
 
-                  dbhandler
-                      .child('Company')
-                      .orderByChild('company_id')
-                      .equalTo(companyId)
-                      .onValue
-                      .listen((event) async {
-                    print('Job Query output: ${event.snapshot.value}');
-                    if (event.snapshot.value != null) {
-                      Map<dynamic, dynamic>? data =
-                          event.snapshot.value as Map<dynamic, dynamic>?;
-                      if (data != null) {
-                        // Assuming there is only one entry, you can access it directly
-                        var companyKey = data.keys.first;
-                        var companyData = data[companyKey];
-                        String companyName = companyData['name'];
-                        
-                        jobDetailsList.add({
-                          'jobId': jobId,
-                          'company': companyName,
-                          'date': date,
-                          'startTime': jobStartTime,
-                          'endTime': jobEndTime,
-                          'location': location,
-                        });
+                    String location = await getPlacemarks(lat, long);
+                    print(location);
+
+                    dbhandler
+                        .child('Company')
+                        .orderByChild('company_id')
+                        .equalTo(companyId)
+                        .onValue
+                        .listen((event) async {
+                      print('Job Query output: ${event.snapshot.value}');
+                      if (event.snapshot.value != null) {
+                        Map<dynamic, dynamic>? data =
+                            event.snapshot.value as Map<dynamic, dynamic>?;
+                        if (data != null) {
+                          // Assuming there is only one entry, you can access it directly
+                          var companyKey = data.keys.first;
+                          var companyData = data[companyKey];
+                          String companyName = companyData['name'];
+
+                          jobDetailsList.add({
+                            'jobId': jobId,
+                            'company': companyName,
+                            'date': date,
+                            'startTime': jobStartTime,
+                            'endTime': jobEndTime,
+                            'location': location,
+                          });
+                        }
                       }
-                    }
-                  });
+                    });
+                  }
                 }
               }
             });
