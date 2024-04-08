@@ -6,7 +6,7 @@ import 'package:fyp/templates/pushBut.dart';
 class WorkerAbility extends StatefulWidget {
   final String workerId;
 
-  const WorkerAbility({Key? key, required this.workerId}) : super(key: key);
+  const WorkerAbility({super.key, required this.workerId});
 
   @override
   State createState() => WorkerAbilityState();

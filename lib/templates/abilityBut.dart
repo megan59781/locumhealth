@@ -12,7 +12,7 @@ class AbilityButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 15.0),
         decoration:
             BoxDecoration(border: Border.all(color: Colors.black, width: 2)),
-        child: Column(
+        child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
@@ -169,11 +168,11 @@ class WorkerTPreferenceState extends State<WorkerTPreference> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 200),
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(width: 7),
+                  SizedBox(width: 7),
                   // Expanded(
                   //     child: DayButton(
                   //         text: "Mon", onPress: () => _timeselector(context))),
