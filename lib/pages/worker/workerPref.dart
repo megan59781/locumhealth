@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_typing_uninitialized_variables
+
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
@@ -191,53 +193,58 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  Future<void> addAvailableDb(int dayId, String workerId, TimeOfDay startTime,
+  Future<void> adjustAvailableDb(int dayId, String workerId, TimeOfDay startTime,
       TimeOfDay endTime, BuildContext context) async {
-    Map<String, dynamic> available = {
-      "day_id": dayId,
-      "worker_id": workerId,
-      "day_start_time": startTime.format(context),
-      "day_end_time": endTime.format(context)
-    };
-    try {
-      await dbhandler.child("Availability").push().set(available);
-      //Navigator.of(context).pop();
-    } catch (error) {
-      print("Error saving to Firebase: $error");
-    }
-  }
-
-  Future<void> updateAvailableDb(int dayId, String workerId,
-      TimeOfDay startTime, TimeOfDay endTime, BuildContext context) async {
-    dbhandler
-        .child('Availability')
+    
+    dbhandler.child("Availability")
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
-        .listen((event) {
-      if (event.snapshot.value != null) {
-        Map<dynamic, dynamic>? data =
-            event.snapshot.value as Map<dynamic, dynamic>?;
+        .listen((event) async {
+      
+      DataSnapshot snapshot = event.snapshot;
+      
+      if (snapshot.value != null) {
+        Map<dynamic, dynamic>? data = snapshot.value as Map<dynamic, dynamic>?;
+        
         if (data != null) {
+          var existingEntryKey;
           data.forEach((key, value) {
             if (value["day_id"] == dayId) {
-              dbhandler.child("Availability").child(key).update({
-                "day_start_time": startTime.format(context),
-                "day_end_time": endTime.format(context)
-              }).then((value) {
-                //Navigator.of(context).pop();
-              }).catchError((error) {
-                print("Error saving to Firebase: $error");
-              });
+              existingEntryKey = key;
             }
           });
+
+          if (existingEntryKey != null) {
+            // Update existing entry
+            await dbhandler.child("Availability").child(existingEntryKey).update({
+              "day_start_time": startTime.format(context),
+              "day_end_time": endTime.format(context)
+            });
+          } else {
+            // Add new entry
+            Map<String, dynamic> available = {
+              "day_id": dayId,
+              "worker_id": workerId,
+              "day_start_time": startTime.format(context),
+              "day_end_time": endTime.format(context)
+            };
+            await dbhandler.child("Availability").push().set(available);
+          }
         }
       } else {
-        // Handle error
-        print('error');
+        // Handle case when there are no existing entries
+        // Add new entry since there's no existing entry for the worker
+        Map<String, dynamic> available = {
+          "day_id": dayId,
+          "worker_id": workerId,
+          "day_start_time": startTime.format(context),
+          "day_end_time": endTime.format(context)
+        };
+        await dbhandler.child("Availability").push().set(available);
       }
     });
-  }
+}
 
   Future<void> updateWorkerMiles(
       String workerId, int miles, BuildContext context) async {
@@ -653,31 +660,31 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 text: 'Submit Preferences',
                 onPress: () async {
                   if (selMon) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         1, workerId, monStartTime, monEndTime, context);
                   }
                   if (selTue) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         2, workerId, tueStartTime, tueEndTime, context);
                   }
                   if (selWed) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         3, workerId, wedStartTime, wedEndTime, context);
                   }
                   if (selThu) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         4, workerId, thuStartTime, thuEndTime, context);
                   }
                   if (selFri) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         5, workerId, friStartTime, friEndTime, context);
                   }
                   if (selSat) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         6, workerId, satStartTime, satEndTime, context);
                   }
                   if (selSun) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         7, workerId, sunStartTime, sunEndTime, context);
                   }
                 },
