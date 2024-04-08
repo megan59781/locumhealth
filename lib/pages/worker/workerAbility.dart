@@ -11,7 +11,7 @@ class WorkerAbility extends StatefulWidget {
 }
 
 class WorkerAbilityState extends State<WorkerAbility> {
-  List<String> selectedNames = [];
+  List<String> selectedAbilitys = [];
   static const List<String> selections = <String>[
     'First Aid',
     'Manual Handling',
@@ -56,13 +56,13 @@ class WorkerAbilityState extends State<WorkerAbility> {
                         child: Row(
                           children: [
                             Checkbox(
-                              value: selectedNames.contains(ability),
+                              value: selectedAbilitys.contains(ability),
                               onChanged: (bool? value) {
                                 setState(() {
                                   if (value != null && value) {
-                                    selectedNames.add(ability);
+                                    selectedAbilitys.add(ability);
                                   } else {
-                                    selectedNames.remove(ability);
+                                    selectedAbilitys.remove(ability);
                                   }
                                 });
                               },
