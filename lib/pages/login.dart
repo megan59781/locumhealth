@@ -21,6 +21,10 @@ class LoginState extends State<Login> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
+  DateTime selectedDate = DateTime.now()
+      .subtract(const Duration(days: ((18 * 365) + 4))); // as 4 leep years
+  DateTime minAgeDate =
+      DateTime.now().subtract(const Duration(days: ((18 * 365) + 4)));
 
   /// Retrieves the current latitude and longitude.
   ///
@@ -32,12 +36,13 @@ class LoginState extends State<Login> {
         desiredAccuracy: LocationAccuracy.best,
         forceAndroidLocationManager: true,
       );
-
       double latitude = position.latitude;
       double longitude = position.longitude;
 
       return [latitude, longitude];
     } catch (e) {
+      print(e);
+      //print(e);
       // You might want to handle the error accordingly, for example, returning a default location.
       return [0.0, 0.0];
     }
@@ -47,18 +52,18 @@ class LoginState extends State<Login> {
   ///
   /// Retrieves the current location and creates a worker object with the user's information.
   /// The worker object is then pushed to the Firebase database under the "Worker" node.
-  Future<void> addWorkerDb(user) async {
+  Future<void> addWorkerDb(user, DateTime bday) async {
     dbhandler
         .child('Worker')
         .orderByChild('worker_id')
         .equalTo(user.uid)
         .onValue
+        .take(1)
         .listen((event) async {
       print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
         List<double> location = await getCurrentLatLong();
 
-        DateTime bday = DateTime(2000, 1, 1);
         Map<String, dynamic> worker = {
           "worker_id": user.uid,
           "name": user.displayName.toString(),
@@ -87,6 +92,7 @@ class LoginState extends State<Login> {
         .orderByChild('company_id')
         .equalTo(user.uid)
         .onValue
+        .take(1)
         .listen((event) {
       print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
@@ -131,6 +137,34 @@ class LoginState extends State<Login> {
     }
   }
 
+  Future<DateTime> _dateSelector(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: selectedDate.subtract(const Duration(days: (31025))),
+        lastDate: minAgeDate);
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+    return selectedDate;
+  }
+
+  Future<void> checkBirthday(BuildContext context, User user) async {
+    DateTime? bday = await _dateSelector(context);
+    if (bday.isBefore(minAgeDate)) {
+      addWorkerDb(user, bday);
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => WorkerNavigationBar(workerId: user.uid)));
+    } else {
+      print('failed');
+      // TO DO SORT FAILED GOOGLE
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -168,13 +202,7 @@ class LoginState extends State<Login> {
               onPress: () async {
                 User? user = await _handleSignIn();
                 if (user != null) {
-                  print('correct');
-                  addWorkerDb(user);
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              WorkerNavigationBar(workerId: user.uid)));
+                  checkBirthday(context, user);
                 } else {
                   print('failed');
                   // TO DO SORT FAILED GOOGLE
@@ -188,4 +216,3 @@ class LoginState extends State<Login> {
     );
   }
 }
-
