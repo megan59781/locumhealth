@@ -96,52 +96,45 @@ class CompanyJobState extends State<CompanyJob> {
                   var jobData = data[jobKey];
 
                   var date = jobData['date'];
-                  var jobStartTime = jobData['job_start_time'];
-                  var jobEndTime = jobData['job_end_time'];
 
-                  // TO DO CACLULATE AND DISPLAY LOCTAION WITH JOB
-                  double lat = jobData['latitude'];
-                  double long = jobData['longitude'];
+                  if (DateTime.parse(date).isAfter(DateTime.now())) {
+                    var jobStartTime = jobData['job_start_time'];
+                    var jobEndTime = jobData['job_end_time'];
 
-                  String location = await getPlacemarks(lat, long);
-                  print(location);
+                    double lat = jobData['latitude'];
+                    double long = jobData['longitude'];
 
-                  dbhandler
-                      .child('Worker')
-                      .orderByChild('worker_id')
-                      .equalTo(workerId)
-                      .onValue
-                      .listen((event) async {
-                    print('Worker Query output: ${event.snapshot.value}');
-                    if (event.snapshot.value != null) {
-                      Map<dynamic, dynamic>? data =
-                          event.snapshot.value as Map<dynamic, dynamic>?;
-                      if (data != null) {
-                        var workerKey = data.keys.first;
-                        var workerData = data[workerKey];
+                    String location = await getPlacemarks(lat, long);
+                    print(location);
 
-                        var worker = workerData['name'];
+                    dbhandler
+                        .child('Worker')
+                        .orderByChild('worker_id')
+                        .equalTo(workerId)
+                        .onValue
+                        .listen((event) async {
+                      print('Worker Query output: ${event.snapshot.value}');
+                      if (event.snapshot.value != null) {
+                        Map<dynamic, dynamic>? data =
+                            event.snapshot.value as Map<dynamic, dynamic>?;
+                        if (data != null) {
+                          var workerKey = data.keys.first;
+                          var workerData = data[workerKey];
 
-                        jobDetailsList.add({
-                          'jobId': jobId,
-                          'worker': worker,
-                          'date': date,
-                          'startTime': jobStartTime,
-                          'endTime': jobEndTime,
-                          'location': location,
-                        });
+                          var worker = workerData['name'];
+
+                          jobDetailsList.add({
+                            'jobId': jobId,
+                            'worker': worker,
+                            'date': date,
+                            'startTime': jobStartTime,
+                            'endTime': jobEndTime,
+                            'location': location,
+                          });
+                        }
                       }
-                    }
-                  });
-
-                  // jobDetailsList.add({
-                  //   'jobId': jobId,
-                  //   'workerId': workerId,
-                  //   'date': date,
-                  //   'startTime': jobStartTime,
-                  //   'endTime': jobEndTime,
-                  //   'location': location,
-                  // });
+                    });
+                  }
                 }
               }
             });
