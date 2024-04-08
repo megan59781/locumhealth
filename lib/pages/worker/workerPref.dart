@@ -365,7 +365,8 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
   Future<void> _updateLocation(
       BuildContext context, double? lat, double? long) async {
-    if (lat != null && long != null) { // if lat and long are not null
+    if (lat != null && long != null) {
+      // if lat and long are not null
       updateWorkerLocationDb(widget.workerId, lat, long, context);
       String location = await getPlacemarks(lat, long);
       setState(() {
@@ -509,8 +510,19 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                     DateTime.parse("2024-01-01 ${startTimeController.text}"));
                 TimeOfDay endTime = TimeOfDay.fromDateTime(
                     DateTime.parse("2024-01-01 ${endTimeController.text}"));
-                updateSelected(true, startTime, endTime);
-                Navigator.of(context).pop();
+                if (endTime.hour < startTime.hour ||
+                    (endTime.hour == startTime.hour &&
+                        endTime.minute <= startTime.minute)) {
+                  // Invalid end time, show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('End time must be after start time.'),
+                    ),
+                  );
+                }else{
+                  updateSelected(true, startTime, endTime);
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ],

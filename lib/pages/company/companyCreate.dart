@@ -217,8 +217,6 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     );
   }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-  ///
   Future<void> locationSelector(BuildContext context) async {
     return showDialog(
       context: context,
