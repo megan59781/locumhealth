@@ -1,5 +1,7 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/pushBut.dart';
 
 class WorkerAbility extends StatefulWidget {
   final String workerId;
@@ -11,6 +13,8 @@ class WorkerAbility extends StatefulWidget {
 }
 
 class WorkerAbilityState extends State<WorkerAbility> {
+  DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
+
   List<String> selectedAbilitys = [];
   static const List<String> selections = <String>[
     'First Aid',
@@ -28,7 +32,17 @@ class WorkerAbilityState extends State<WorkerAbility> {
     'Restrained Training',
   ];
 
-  
+  Future<void> addAbilitysDb() async {
+    Map<String, dynamic> abilityList = {
+      "worker_id": widget.workerId,
+    };
+    for (String ability in selectedAbilitys) {
+      abilityList.addAll({
+        ability: true,
+      });
+    }
+    await dbhandler.child("Ability").push().set(abilityList);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +95,15 @@ class WorkerAbilityState extends State<WorkerAbility> {
                     },
                     itemCount: selections.length,
                   ),
+                ),
+                const SizedBox(height: 30),
+                PushButton(
+                  buttonSize: 70,
+                  text: 'Submit Preferences',
+                  onPress: () {
+                    addAbilitysDb();
+                    //Navigator.pop(context);
+                  },
                 ),
                 const SizedBox(height: 30),
               ]),
