@@ -106,13 +106,32 @@ class WorkerJobState extends State<WorkerJob> {
                   String location = await getPlacemarks(lat, long);
                   print(location);
 
-                  jobDetailsList.add({
-                    'jobId': jobId,
-                    'company': companyId,
-                    'date': date,
-                    'startTime': jobStartTime,
-                    'endTime': jobEndTime,
-                    'location': location,
+                  dbhandler
+                      .child('Company')
+                      .orderByChild('company_id')
+                      .equalTo(companyId)
+                      .onValue
+                      .listen((event) async {
+                    print('Job Query output: ${event.snapshot.value}');
+                    if (event.snapshot.value != null) {
+                      Map<dynamic, dynamic>? data =
+                          event.snapshot.value as Map<dynamic, dynamic>?;
+                      if (data != null) {
+                        // Assuming there is only one entry, you can access it directly
+                        var companyKey = data.keys.first;
+                        var companyData = data[companyKey];
+                        String companyName = companyData['name'];
+                        
+                        jobDetailsList.add({
+                          'jobId': jobId,
+                          'company': companyName,
+                          'date': date,
+                          'startTime': jobStartTime,
+                          'endTime': jobEndTime,
+                          'location': location,
+                        });
+                      }
+                    }
                   });
                 }
               }
