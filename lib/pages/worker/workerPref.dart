@@ -281,6 +281,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
+        .take(1)
         .listen((event) {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
@@ -322,9 +323,13 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
-                getLocationCoordinates(context);
+                Map<String, double> coordinates =
+                    await getLocationCoordinates(context);
+                double? lat = coordinates['latitude'];
+                double? long = coordinates['longitude'];
+                _updateLocation(context, lat, long);
               },
               child: const Text('Submit'),
             ),
@@ -334,36 +339,50 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     );
   }
 
-  Future<void> getLocationCoordinates(BuildContext context) async {
+  Future<Map<String, double>> getLocationCoordinates(
+      BuildContext context) async {
     final String location = locationController.text;
+    Map<String, double> coordinates = {};
 
     try {
       List<Location> locations = await locationFromAddress(location);
       if (locations.isNotEmpty) {
-        lat = locations[0].latitude;
-        long = locations[0].longitude;
-        currentLocation =
-            await getPlacemarks(lat, long); //pass through placemarks
-        print(lat);
-        print(long);
+        double lat = locations[0].latitude;
+        double long = locations[0].longitude;
+        //currentLocation = await getPlacemarks(lat, long); //pass through placemarks
+        // print(lat);
+        // print(long);
+        coordinates = {'latitude': lat, 'longitude': long};
       } else {
         print('No location found for: $location');
       }
     } catch (e) {
       print('Error during geocoding: $e');
     }
+
+    return coordinates;
+  }
+
+  Future<void> _updateLocation(
+      BuildContext context, double? lat, double? long) async {
+    if (lat != null && long != null) { // if lat and long are not null
+      updateWorkerLocationDb(widget.workerId, lat, long, context);
+      String location = await getPlacemarks(lat, long);
+      setState(() {
+        currentLocation = location;
+      });
+    }
   }
 
   Future<void> _updateMiles(BuildContext context) async {
-  int? miles = await _milesSelector(context);
-  if (miles != null) {
-    setState(() {
-      currentMilesVal = miles;
-    });
-    int mile = currentMilesVal ?? 1;
-    updateWorkerMilesDb(widget.workerId, mile, context);
+    int? miles = await _milesSelector(context);
+    if (miles != null) {
+      updateWorkerMilesDb(widget.workerId, miles, context);
+      setState(() {
+        currentMilesVal = miles;
+      });
+    }
   }
-}
 
   Future<int?> _milesSelector(BuildContext context) async {
     int? selectedMiles = await showDialog<int>(
@@ -650,10 +669,6 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 text: 'My location is wrong', // TO DO MAKE SHOW MAIN LOCATION
                 onPress: () {
                   locationSelector(context);
-                  setState(() {
-                    currentLocation = currentLocation;
-                    updateWorkerLocationDb(workerId, lat, long, context);
-                  });
                 },
               ),
               const SizedBox(height: 50),
