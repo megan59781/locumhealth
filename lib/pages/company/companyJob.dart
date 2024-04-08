@@ -68,9 +68,11 @@ class CompanyJobState extends State<CompanyJob> {
           List<Map<String, dynamic>> jobIdList = [];
           data.forEach((key, value) {
             //Deal with jobs in the list
+            // bool isCompleted = value['is_completed'];
+            bool accepted = value['worker_accepted'];
             String jobId = value['job_id'];
             String workerId = value['worker_id'];
-            jobIdList.add({"jobId": jobId, "workerId": workerId});
+            jobIdList.add({"jobId": jobId, "workerId": workerId, "accepted": accepted});
           });
 
           List<Map<String, dynamic>> jobDetailsList = [];
@@ -79,6 +81,7 @@ class CompanyJobState extends State<CompanyJob> {
           for (var job in jobIdList) {
             String jobId = job['jobId'];
             String workerId = job['workerId'];
+            bool accepted = job['accepted'];
             print("$jobId            w:$workerId");
             dbhandler
                 .child('Jobs')
@@ -97,7 +100,7 @@ class CompanyJobState extends State<CompanyJob> {
 
                   var date = jobData['date'];
 
-                  if (DateTime.parse(date).isAfter(DateTime.now())) {
+                  // if (DateTime.parse(date).isAfter(DateTime.now())) {
                     var jobStartTime = jobData['job_start_time'];
                     var jobEndTime = jobData['job_end_time'];
 
@@ -130,13 +133,13 @@ class CompanyJobState extends State<CompanyJob> {
                             'startTime': jobStartTime,
                             'endTime': jobEndTime,
                             'location': location,
+                            'assigned': accepted,
                           });
                         }
                       }
                     });
                   }
                 }
-              }
             });
           }
 
@@ -152,6 +155,14 @@ class CompanyJobState extends State<CompanyJob> {
         print("MEGAN IT fails: Data is not in the expected format");
       }
     });
+  }
+
+  Color pickColour(bool assigned) {
+    if (assigned) {
+      return Colors.lightGreen[400]!;
+    } else {
+      return Colors.deepOrange[600]!;
+    }
   }
 
   @override
@@ -186,6 +197,7 @@ class CompanyJobState extends State<CompanyJob> {
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
+                          color: pickColour(job['assigned']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),

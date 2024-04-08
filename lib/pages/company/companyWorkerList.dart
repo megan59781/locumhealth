@@ -260,6 +260,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
       "worker_id": workerId,
       "worker_job_complete": false,
       "company_job_complete": false,
+      "worker_accepted": false,
     };
 
     try {

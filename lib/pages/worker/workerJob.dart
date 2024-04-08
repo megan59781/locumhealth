@@ -70,15 +70,18 @@ class WorkerJobState extends State<WorkerJob> {
             //Deal with jobs in the list
             String jobId = value['job_id'];
             String companyId = value['company_id'];
-            jobIdList.add({"jobId": jobId, "companyId": companyId});
+            bool accepted = value['worker_accepted'];
+            jobIdList.add(
+                {"jobId": jobId, "companyId": companyId, "accepted": accepted});
           });
 
           List<Map<String, dynamic>> jobDetailsList = [];
-          print("jobIdList: $jobIdList");
+          print("HERE jobIdList: $jobIdList");
 
           for (var job in jobIdList) {
             String jobId = job['jobId'];
             String companyId = job['companyId'];
+            bool accepted = job['accepted'];
             print("$jobId            w:$companyId");
             dbhandler
                 .child('Jobs')
@@ -96,30 +99,28 @@ class WorkerJobState extends State<WorkerJob> {
                   var jobData = data[jobKey];
 
                   var date = jobData['date'];
+                  var jobStartTime = jobData['job_start_time'];
+                  var jobEndTime = jobData['job_end_time'];
 
-                  if (DateTime.parse(date).isAfter(DateTime.now())) {
-                    var jobStartTime = jobData['job_start_time'];
-                    var jobEndTime = jobData['job_end_time'];
+                  double lat = jobData['latitude'];
+                  double long = jobData['longitude'];
 
-                    double lat = jobData['latitude'];
-                    double long = jobData['longitude'];
+                  String location = await getPlacemarks(lat, long);
+                  print(location);
 
-                    String location = await getPlacemarks(lat, long);
-                    print(location);
-
-                    dbhandler
-                        .child('Company')
-                        .orderByChild('company_id')
-                        .equalTo(companyId)
-                        .onValue
-                        .listen((event) async {
-                      print('Job Query output: ${event.snapshot.value}');
-                      if (event.snapshot.value != null) {
-                        Map<dynamic, dynamic>? data =
-                            event.snapshot.value as Map<dynamic, dynamic>?;
-                        if (data != null) {
-                          // Assuming there is only one entry, you can access it directly
-                          var companyKey = data.keys.first;
+                  dbhandler
+                      .child('Company')
+                      .orderByChild('company_id')
+                      .equalTo(companyId)
+                      .onValue
+                      .listen((event) async {
+                    print('Company Query output: ${event.snapshot.value}');
+                    if (event.snapshot.value != null) {
+                      Map<dynamic, dynamic>? data =
+                          event.snapshot.value as Map<dynamic, dynamic>?;
+                      if (data != null) {
+                        // Assuming there is only one entry, you can access it directly
+                        for (var companyKey in data.keys) {
                           var companyData = data[companyKey];
                           String companyName = companyData['name'];
 
@@ -130,11 +131,12 @@ class WorkerJobState extends State<WorkerJob> {
                             'startTime': jobStartTime,
                             'endTime': jobEndTime,
                             'location': location,
+                            "assigned": accepted,
                           });
                         }
                       }
-                    });
-                  }
+                    }
+                  });
                 }
               }
             });
@@ -152,6 +154,22 @@ class WorkerJobState extends State<WorkerJob> {
         print("MEGAN IT fails: Data is not in the expected format");
       }
     });
+  }
+
+  Color pickColour(bool assigned) {
+    if (assigned) {
+      return Colors.lightGreen[400]!;
+    } else {
+      return Colors.deepOrange[400]!;
+    }
+  }
+
+  void clicked(bool assigned){
+    if (assigned == false) {
+      // TO DO ASK IF WANT JOB
+    } else {
+      print('Job is assigned');
+    }
   }
 
   @override
@@ -186,6 +204,7 @@ class WorkerJobState extends State<WorkerJob> {
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
+                          color: pickColour(job['assigned']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),
