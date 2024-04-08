@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_typing_uninitialized_variables
-
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
@@ -20,7 +18,7 @@ class WorkerPreference extends StatefulWidget {
 
 class WorkerPreferenceState extends State<WorkerPreference> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
-  int currentMilesVal = 1;
+  int? currentMilesVal;
   TimeOfDay selectedTime = TimeOfDay.now();
   double lat = 0.0;
   double long = 0.0;
@@ -193,20 +191,19 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  Future<void> adjustAvailableDb(int dayId, String workerId, TimeOfDay startTime,
-      TimeOfDay endTime, BuildContext context) async {
-    
-    dbhandler.child("Availability")
+  Future<void> adjustAvailableDb(int dayId, String workerId,
+      TimeOfDay startTime, TimeOfDay endTime, BuildContext context) async {
+    dbhandler
+        .child("Availability")
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
         .listen((event) async {
-      
       DataSnapshot snapshot = event.snapshot;
-      
+
       if (snapshot.value != null) {
         Map<dynamic, dynamic>? data = snapshot.value as Map<dynamic, dynamic>?;
-        
+
         if (data != null) {
           var existingEntryKey;
           data.forEach((key, value) {
@@ -217,7 +214,10 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
           if (existingEntryKey != null) {
             // Update existing entry
-            await dbhandler.child("Availability").child(existingEntryKey).update({
+            await dbhandler
+                .child("Availability")
+                .child(existingEntryKey)
+                .update({
               "day_start_time": startTime.format(context),
               "day_end_time": endTime.format(context)
             });
@@ -244,15 +244,16 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         await dbhandler.child("Availability").push().set(available);
       }
     });
-}
+  }
 
-  Future<void> updateWorkerMiles(
+  Future<void> updateWorkerMilesDb(
       String workerId, int miles, BuildContext context) async {
     dbhandler
         .child('Worker')
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
+        .take(1)
         .listen((event) {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
@@ -269,14 +270,11 @@ class WorkerPreferenceState extends State<WorkerPreference> {
             });
           });
         }
-      } else {
-        // Handle error
-        print('error');
       }
     });
   }
 
-  Future<void> updateWorkerLocation(
+  Future<void> updateWorkerLocationDb(
       String workerId, double lat, double long, BuildContext context) async {
     dbhandler
         .child('Worker')
@@ -356,10 +354,22 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
+  Future<void> _updateMiles(BuildContext context) async {
+  int? miles = await _milesSelector(context);
+  if (miles != null) {
+    setState(() {
+      currentMilesVal = miles;
+    });
+    int mile = currentMilesVal ?? 1;
+    updateWorkerMilesDb(widget.workerId, mile, context);
+  }
+}
+
   Future<int?> _milesSelector(BuildContext context) async {
-    return showDialog<int>(
+    int? selectedMiles = await showDialog<int>(
         context: context,
         builder: (BuildContext context) {
+          int miles = currentMilesVal ?? 1;
           return AlertDialog(
             title: const DisplayText(
                 text: "Select the maxium miles",
@@ -373,15 +383,18 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
                         NumberPicker(
-                          selectedTextStyle: const TextStyle(
-                              color: Colors.deepPurple, fontSize: 20),
-                          value: currentMilesVal,
-                          minValue: 1,
-                          maxValue: 25,
-                          step: 1,
-                          onChanged: (value) =>
-                              setState(() => currentMilesVal = value),
-                        )
+                            selectedTextStyle: const TextStyle(
+                                color: Colors.deepPurple, fontSize: 20),
+                            value: miles,
+                            minValue: 1,
+                            maxValue: 25,
+                            step: 1,
+                            onChanged: (value) {
+                              setState(() {
+                                miles = value;
+                                currentMilesVal = value;
+                              });
+                            })
                       ]);
                 })),
             actions: [
@@ -389,13 +402,13 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 child: const DisplayText(
                     text: "Submit", fontSize: 20, colour: Colors.black),
                 onPressed: () {
-                  // TO DO SAVE
-                  Navigator.of(context).pop(currentMilesVal);
+                  Navigator.of(context).pop(miles);
                 },
               )
             ],
           );
         });
+    return selectedMiles;
   }
 
   // function handles time selected and update _timeSelector widgit
@@ -637,22 +650,24 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 text: 'My location is wrong', // TO DO MAKE SHOW MAIN LOCATION
                 onPress: () {
                   locationSelector(context);
+                  setState(() {
+                    currentLocation = currentLocation;
+                    updateWorkerLocationDb(workerId, lat, long, context);
+                  });
                 },
               ),
               const SizedBox(height: 50),
               DisplayText(
-                  text: "Maxium Miles Traveled: $currentMilesVal",
-                  fontSize: 20,
-                  colour: Colors.black),
+                text: "Maximum Miles Traveled: ${currentMilesVal ?? 'Not set'}",
+                fontSize: 20,
+                colour: Colors.black,
+              ),
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 60,
                   text: 'Change Miles',
                   onPress: () {
-                    _milesSelector(context);
-                    setState(() {
-                      currentMilesVal;
-                    });
+                    _updateMiles(context);
                   }),
               const SizedBox(height: 50),
               PushButton(
