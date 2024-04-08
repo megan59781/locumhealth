@@ -164,7 +164,82 @@ class WorkerJobState extends State<WorkerJob> {
     }
   }
 
-  void clicked(bool assigned){
+  Future<void> acceptJob(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            'worker_accepted': true,
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> declineJob(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            'worker_id': " ",
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> jobSelector(BuildContext context) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Company Name'),
+          content: const DisplayText(
+              text: 'Do you want to accept this job?',
+              fontSize: 20,
+              colour: Colors.black),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void clicked(bool assigned) {
     if (assigned == false) {
       // TO DO ASK IF WANT JOB
     } else {
