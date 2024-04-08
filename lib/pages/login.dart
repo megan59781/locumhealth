@@ -25,6 +25,7 @@ class LoginState extends State<Login> {
       .subtract(const Duration(days: ((18 * 365) + 4))); // as 4 leep years
   DateTime minAgeDate =
       DateTime.now().subtract(const Duration(days: ((18 * 365) + 4)));
+  final TextEditingController nameController = TextEditingController();
 
   /// Retrieves the current latitude and longitude.
   ///
@@ -52,7 +53,7 @@ class LoginState extends State<Login> {
   ///
   /// Retrieves the current location and creates a worker object with the user's information.
   /// The worker object is then pushed to the Firebase database under the "Worker" node.
-  Future<void> addWorkerDb(user, DateTime bday) async {
+  Future<void> addWorkerDb(user) async {
     dbhandler
         .child('Worker')
         .orderByChild('worker_id')
@@ -62,8 +63,8 @@ class LoginState extends State<Login> {
         .listen((event) async {
       print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
+        DateTime? bday = await _dateSelector(context);
         List<double> location = await getCurrentLatLong();
-
         Map<String, dynamic> worker = {
           "worker_id": user.uid,
           "name": user.displayName.toString(),
@@ -73,13 +74,17 @@ class LoginState extends State<Login> {
           "longitude": location[1],
           "miles": 0,
         };
-        dbhandler.child("Worker").push().set(worker).then((value) {
-          //Navigator.of(context).pop();
+        dbhandler.child("Worker").push().set(worker).then((value) async {
+          await Future.delayed(const Duration(seconds: 5));
         }).catchError((error) {
           print("Error saving to Firebase: $error");
         });
       }
     });
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => WorkerNavigationBar(workerId: user.uid)));
   }
 
   /// Adds a company to the database if it doesn't already exist.
@@ -93,12 +98,14 @@ class LoginState extends State<Login> {
         .equalTo(user.uid)
         .onValue
         .take(1)
-        .listen((event) {
+        .listen((event) async {
       print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
+        await nameSelector(context);
+        String name = nameController.text;
         Map<String, dynamic> company = {
           "company_id": user.uid,
-          "name": user.displayName.toString(), //TO DO ASK NAME??
+          "name": name,
           "email": user.email.toString(),
         };
         dbhandler.child("Company").push().set(company).then((value) {
@@ -109,6 +116,10 @@ class LoginState extends State<Login> {
         });
       }
     });
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => CompanyNavigationBar(companyId: user.uid)));
   }
 
   /// Verifies the Google account and returns the user information if valid.
@@ -151,18 +162,29 @@ class LoginState extends State<Login> {
     return selectedDate;
   }
 
-  Future<void> checkBirthday(BuildContext context, User user) async {
-    DateTime? bday = await _dateSelector(context);
-    if (bday.isBefore(minAgeDate)) {
-      addWorkerDb(user, bday);
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => WorkerNavigationBar(workerId: user.uid)));
-    } else {
-      print('failed');
-      // TO DO SORT FAILED GOOGLE
-    }
+  Future<void> nameSelector(BuildContext context) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Company Name'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(labelText: 'Company Name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty) {
+                  Navigator.of(context).pop(nameController);
+                }
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -181,12 +203,7 @@ class LoginState extends State<Login> {
               onPress: () async {
                 User? user = await _handleSignIn();
                 if (user != null) {
-                  print('correct');
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              CompanyNavigationBar(companyId: user.uid)));
+                  addCompanyDb(user);
                 } else {
                   print('failed');
                   // TO DO SORT FAILED GOOGLE
@@ -202,7 +219,7 @@ class LoginState extends State<Login> {
               onPress: () async {
                 User? user = await _handleSignIn();
                 if (user != null) {
-                  checkBirthday(context, user);
+                  addWorkerDb(user);
                 } else {
                   print('failed');
                   // TO DO SORT FAILED GOOGLE
