@@ -434,7 +434,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => CompanyWorkerList(
-                                companyId: widget.companyId, jobId: jobId)));
+                                companyId: widget.companyId, jobId: jobId, abilityList: selectedAbilitys)));
                   });
                 });
               },

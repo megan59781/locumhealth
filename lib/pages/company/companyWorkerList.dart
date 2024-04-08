@@ -10,8 +10,12 @@ import 'package:uuid/uuid.dart';
 class CompanyWorkerList extends StatefulWidget {
   final String companyId;
   final String jobId;
+  final List<String> abilityList;
   const CompanyWorkerList(
-      {super.key, required this.companyId, required this.jobId});
+      {super.key,
+      required this.companyId,
+      required this.jobId,
+      required this.abilityList});
 
   @override
   State<CompanyWorkerList> createState() => CompanyWorkerListState();
@@ -58,7 +62,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
   }
 
   void getAvailablWorkers(
-      String jobId, Function(List<dynamic> workerList) getList) {
+      String jobId, Function(List<String> workerList) getList) {
     print("Print this function is being passed");
     print(jobId);
 
@@ -129,7 +133,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
               if (data != null) {
                 // Convert the Map<dynamic, dynamic> to a List
-                List<Map<String, dynamic>> availWorkerList = [];
+                List<String> availWorkerList = [];
                 data.forEach((key, value) {
                   int availStartTime =
                       stringTimeToMins(value['day_start_time']);
@@ -138,21 +142,16 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                   if ((availStartTime <= stringTimeToMins(jobStartTime)) &&
                       (availEndTime >= stringTimeToMins(jobEndTime))) {
                     String workerId = value['worker_id'];
-                    int miles = value['miles'];
-                    availWorkerList.add({"workerId": workerId, "miles": miles});
+                    availWorkerList.add(workerId);
                   }
                 });
 
                 // Now you have a list of jobs
                 print('Worker List: $availWorkerList');
 
-                List<Map<String, dynamic>> matchedWorkerList = [];
+                List<String> matchedWorkerList = [];
 
-                for (var worker in availWorkerList) {
-                  String workerId =
-                      worker['workerId']; // Use the correct key for worker_id
-                  int miles = worker['miles']; // Use the correct key for miles
-
+                for (String workerId in availWorkerList) {
                   dbhandler
                       .child('Worker')
                       .orderByChild('worker_id')
@@ -172,6 +171,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
                         double lat = workerData['latitude'];
                         double long = workerData['longitude'];
+                        int miles = workerData['miles'];
 
                         double actualDist =
                             calculateDistance(jobLat, jobLong, lat, long);
@@ -180,22 +180,63 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                         double actualMiles = actualDist * 0.6214;
 
                         if (actualMiles <= miles) {
-                          matchedWorkerList.add({
-                            'workerId': workerId,
-                            'miles': actualMiles.round()
-                          });
+                          matchedWorkerList.add(workerId);
                         }
                       }
                     }
                     print("megan this is a sucess");
                     print(matchedWorkerList);
-                    getList(matchedWorkerList);
+
+                    List<String> fullyMatchedWorkerList = [];
+
+                    for (String workerId in matchedWorkerList) {
+                      dbhandler
+                          .child('Ability')
+                          .orderByChild('worker_id')
+                          .equalTo(workerId)
+                          .onValue
+                          .listen((event) {
+                        print(
+                            'HERE ABILITIES Snapshot: ${event.snapshot.value}');
+                        if (event.snapshot.value != null) {
+                          Map<dynamic, dynamic>? data =
+                              event.snapshot.value as Map<dynamic, dynamic>?;
+                          if (data != null) {
+                            List<String> workerAbilities = [];
+                              // Assuming there is only one entry, you can access it directly
+                              var abilityKey = data.keys.first;
+                              var abilityData = data[abilityKey];
+                              abilityData.forEach((key, value) {
+                                if (key != 'worker_id') {
+                                  workerAbilities.add(key);
+                                }
+                              });
+                            print("HERE LIST: $workerAbilities");
+
+                            // Check if all abilities are present
+                            bool allAbilitiesPresent = true;
+                            for (String ability in widget.abilityList) {
+                              if (!workerAbilities.contains(ability)) {
+                                allAbilitiesPresent = false;
+                                break;
+                              }
+                            }
+
+                            if (allAbilitiesPresent) {
+                              fullyMatchedWorkerList.add(workerId);
+                            }
+                          }
+                        }
+                        print("megan this is a sucess");
+                        getList(fullyMatchedWorkerList);
+                      });
+                    }
                   });
                 }
               }
             } else {
-              // Handle the case when there are no jobs with day_id equal to 1
-              print('No jobs found with day_id equal to 1');
+              // TO DO SHOW NO WORKERS FOUND
+              print('No workers found');
               getList([]);
             }
           });
@@ -250,14 +291,13 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                   itemCount: workerList.length,
                   itemBuilder: (context, index) {
                     // Assuming each worker is represented as a Map
-                    Map<String, dynamic> worker = workerList[index];
+                    String worker = workerList[index];
 
                     return InkWell(
                       onTap: () async {
-                        print(
-                            'Clicked on worker: ${worker['workerId']} they are ${worker['miles']} miles away');
-                        addAssignJobDb(widget.jobId, widget.companyId,
-                            worker['workerId'], context);
+                        print('Clicked on worker: $worker');
+                        addAssignJobDb(
+                            widget.jobId, widget.companyId, worker, context);
                         Navigator.push(
                             context,
                             MaterialPageRoute(

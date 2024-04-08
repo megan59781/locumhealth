@@ -99,7 +99,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
                 const SizedBox(height: 30),
                 PushButton(
                   buttonSize: 70,
-                  text: 'Submit Preferences',
+                  text: 'Submit Abilities',
                   onPress: () {
                     addAbilitysDb();
                     //Navigator.pop(context);
