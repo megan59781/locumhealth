@@ -19,11 +19,9 @@ class WorkerJobState extends State<WorkerJob> {
   void initState() {
     super.initState();
     String workerId = widget.workerId;
-    setState(() {
-      getJobs(workerId, (List<dynamic> jobDetailList) {
-        setState(() {
-          jobList = jobDetailList;
-        });
+    getJobs(workerId, (List<dynamic> jobDetailList) {
+      setState(() {
+        jobList = jobDetailList;
       });
     });
   }
@@ -210,25 +208,27 @@ class WorkerJobState extends State<WorkerJob> {
     });
   }
 
-  Future<void> jobSelector(BuildContext context) async {
+  Future<void> jobSelector(BuildContext context, String jobId) async {
     return showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Enter Company Name'),
+          title: const Text('Do you want to accept this job?'),
           content: const DisplayText(
-              text: 'Do you want to accept this job?',
+              text: 'Please select Yes to accept the job or No to decline.',
               fontSize: 20,
               colour: Colors.black),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                declineJob(jobId);
               },
               child: const Text('No'),
             ),
             TextButton(
               onPressed: () {
+                acceptJob(jobId);
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
@@ -239,9 +239,9 @@ class WorkerJobState extends State<WorkerJob> {
     );
   }
 
-  void clicked(bool assigned) {
+  void clicked(String jobId, bool assigned) {
     if (assigned == false) {
-      // TO DO ASK IF WANT JOB
+      jobSelector(context, jobId);
     } else {
       print('Job is assigned');
     }
@@ -271,8 +271,7 @@ class WorkerJobState extends State<WorkerJob> {
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
-                        print(
-                            'Clicked on worker: ${job['worker']} location of job: ${job['location']} ');
+                        clicked(job['jobId'], job['assigned']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
