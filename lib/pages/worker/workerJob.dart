@@ -216,6 +216,39 @@ class WorkerJobState extends State<WorkerJob> {
     });
   }
 
+  Future<void> addDeclinedDb(String jobId, String workerId) async {
+    print("here function working");
+    dbhandler
+        .child("Declined Workers")
+        .orderByChild("job_id")
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var jobKey = data.keys.first;
+          var jobData = data[jobKey];
+          int count = (jobData.length) - 1;
+          String newKey = "worker_id_$count";
+          dbhandler.child("Declined Workers").child(jobKey).update({
+            newKey: workerId,
+          });
+          print("here data exists");
+        }
+      } else {
+        Map<String, dynamic> workers = {
+          "job_id": jobId,
+          "worker_id_0": workerId,
+        };
+        await dbhandler.child("Declined Workers").push().set(workers);
+        print("added HERE");
+      }
+    });
+  }
+
   Future<void> declineJob(String jobId) async {
     dbhandler
         .child('Assigned Jobs')
@@ -254,6 +287,7 @@ class WorkerJobState extends State<WorkerJob> {
               onPressed: () {
                 Navigator.of(context).pop();
                 declineJob(jobId);
+                addDeclinedDb(jobId, widget.workerId);
               },
               child: const Text('No'),
             ),
@@ -322,7 +356,7 @@ class WorkerJobState extends State<WorkerJob> {
     //   print("job over");
     //   //TO DO SORT COLOUR
     //   jobConfirmation(context, jobId);
-  //}
+    //}
     else {
       jobConfirmation(context, jobId);
       // TO DO: error message nothing to do
