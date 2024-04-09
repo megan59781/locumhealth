@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:intl/intl.dart';
 
 class CompanyJob extends StatefulWidget {
   final String companyId;
@@ -176,37 +177,91 @@ class CompanyJobState extends State<CompanyJob> {
     });
   }
 
+  Future<void> confirmJob(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            "company_job_complete": true,
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> jobConfirmation(BuildContext context, String jobId) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Has the job been completed?'),
+          content: const DisplayText(
+              text:
+                  'Please select Yes to confirm the job complettion or No if it has not.',
+              fontSize: 20,
+              colour: Colors.black),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                confirmJob(jobId);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Color pickColour(bool assigned, String workerId) {
     if (assigned) {
       return Colors.lightGreen[400]!;
     }
     if (workerId == ' ') {
-      return Colors.pink[500]!;
+      return Colors.pink[300]!;
     } else {
       return Colors.deepOrange[600]!;
     }
   }
 
-  // void clicked(String jobId, bool assigned, String dateString, String endTime) {
-  //   DateTime today = DateTime.now();
-  //   DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
-  //   TimeOfDay currentTime = TimeOfDay.now();
-  //   String now = currentTime.format(context);
-  //   if (assigned == false) {
-  //     jobSelector(context, jobId);
-  //   }
-  //   // if ((today.isAtSameMomentAs(date) &&
-  //   //         (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
-  //   //     today.isAfter(date)) {
-  //   //   print("job over");
-  //   //   //TO DO SORT COLOUR
-  //   //   jobConfirmation(context, jobId);
-  //   //}
-  //   else {
-  //     jobConfirmation(context, jobId);
-  //     // TO DO: error message nothing to do
-  //   }
-  // }
+  void clicked(String jobId, bool assigned, String dateString, String endTime) {
+    DateTime today = DateTime.now();
+    DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
+    TimeOfDay currentTime = TimeOfDay.now();
+    String now = currentTime.format(context);
+    if (assigned == true) {
+      jobConfirmation(context, jobId);
+      // }
+      // // if ((today.isAtSameMomentAs(date) &&
+      // //         (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
+      // //     today.isAfter(date)) {
+      // //   print("job over");
+      // //   //TO DO SORT COLOUR
+      // //   jobConfirmation(context, jobId);
+      // //}
+      // else {
+
+      //   // TO DO: error message nothing to do
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -232,6 +287,8 @@ class CompanyJobState extends State<CompanyJob> {
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
+                        clicked(job['jobId'], job['assigned'], job['date'],
+                            job['endTime']);
                         print(
                             'Clicked on worker: ${job['worker']} location of job: ${job['location']} ');
                       },
