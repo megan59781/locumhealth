@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:intl/intl.dart';
 
 class WorkerJob extends StatefulWidget {
   final String workerId;
@@ -69,8 +70,15 @@ class WorkerJobState extends State<WorkerJob> {
             String jobId = value['job_id'];
             String companyId = value['company_id'];
             bool accepted = value['worker_accepted'];
-            jobIdList.add(
-                {"jobId": jobId, "companyId": companyId, "accepted": accepted});
+            bool completed = value['worker_job_complete'];
+
+            if (!completed) {
+              jobIdList.add({
+                "jobId": jobId,
+                "companyId": companyId,
+                "accepted": accepted
+              });
+            }
           });
 
           List<Map<String, dynamic>> jobDetailsList = [];
@@ -185,6 +193,29 @@ class WorkerJobState extends State<WorkerJob> {
     });
   }
 
+  Future<void> confirmJob(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            "worker_job_complete": true,
+          });
+        }
+      }
+    });
+  }
+
   Future<void> declineJob(String jobId) async {
     dbhandler
         .child('Assigned Jobs')
@@ -239,11 +270,62 @@ class WorkerJobState extends State<WorkerJob> {
     );
   }
 
-  void clicked(String jobId, bool assigned) {
+  Future<void> jobConfirmation(BuildContext context, String jobId) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Has the job been completed?'),
+          content: const DisplayText(
+              text:
+                  'Please select Yes to confirm the job complettion or No if it has not.',
+              fontSize: 20,
+              colour: Colors.black),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                confirmJob(jobId);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  int stringTimeToMins(String time) {
+    List<String> parts = time.split(':');
+    int hours = int.parse(parts[0]);
+    int minutes = int.parse(parts[1]);
+    return hours * 60 + minutes;
+  }
+
+  void clicked(String jobId, bool assigned, String dateString, String endTime) {
+    DateTime today = DateTime.now();
+    DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
+    TimeOfDay currentTime = TimeOfDay.now();
+    String now = currentTime.format(context);
     if (assigned == false) {
       jobSelector(context, jobId);
-    } else {
-      print('Job is assigned');
+    }
+    // if ((today.isAtSameMomentAs(date) &&
+    //         (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
+    //     today.isAfter(date)) {
+    //   print("job over");
+    //   //TO DO SORT COLOUR
+    //   jobConfirmation(context, jobId);
+  //}
+    else {
+      jobConfirmation(context, jobId);
+      // TO DO: error message nothing to do
     }
   }
 
@@ -271,7 +353,8 @@ class WorkerJobState extends State<WorkerJob> {
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
-                        clicked(job['jobId'], job['assigned']);
+                        clicked(job['jobId'], job['assigned'], job['date'],
+                            job['endTime']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
