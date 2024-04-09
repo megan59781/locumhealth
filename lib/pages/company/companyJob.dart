@@ -72,7 +72,12 @@ class CompanyJobState extends State<CompanyJob> {
             bool accepted = value['worker_accepted'];
             String jobId = value['job_id'];
             String workerId = value['worker_id'];
-            jobIdList.add({"jobId": jobId, "workerId": workerId, "accepted": accepted});
+            bool completed = value['company_job_complete'];
+
+            if (!completed) {
+              jobIdList.add(
+                  {"jobId": jobId, "workerId": workerId, "accepted": accepted});
+            }
           });
 
           List<Map<String, dynamic>> jobDetailsList = [];
@@ -101,15 +106,27 @@ class CompanyJobState extends State<CompanyJob> {
                   var date = jobData['date'];
 
                   // if (DateTime.parse(date).isAfter(DateTime.now())) {
-                    var jobStartTime = jobData['job_start_time'];
-                    var jobEndTime = jobData['job_end_time'];
+                  var jobStartTime = jobData['job_start_time'];
+                  var jobEndTime = jobData['job_end_time'];
 
-                    double lat = jobData['latitude'];
-                    double long = jobData['longitude'];
+                  double lat = jobData['latitude'];
+                  double long = jobData['longitude'];
 
-                    String location = await getPlacemarks(lat, long);
-                    print(location);
+                  String location = await getPlacemarks(lat, long);
+                  print(location);
 
+                  if (workerId == ' ') {
+                    jobDetailsList.add({
+                      'jobId': jobId,
+                      'worker': "worker not assigned yet",
+                      'date': date,
+                      'startTime': jobStartTime,
+                      'endTime': jobEndTime,
+                      'location': location,
+                      'assigned': accepted,
+                      'workerId': workerId
+                    });
+                  } else {
                     dbhandler
                         .child('Worker')
                         .orderByChild('worker_id')
@@ -134,12 +151,14 @@ class CompanyJobState extends State<CompanyJob> {
                             'endTime': jobEndTime,
                             'location': location,
                             'assigned': accepted,
+                            'workerId': workerId
                           });
                         }
                       }
                     });
                   }
                 }
+              }
             });
           }
 
@@ -157,13 +176,37 @@ class CompanyJobState extends State<CompanyJob> {
     });
   }
 
-  Color pickColour(bool assigned) {
+  Color pickColour(bool assigned, String workerId) {
     if (assigned) {
       return Colors.lightGreen[400]!;
+    }
+    if (workerId == ' ') {
+      return Colors.pink[500]!;
     } else {
       return Colors.deepOrange[600]!;
     }
   }
+
+  // void clicked(String jobId, bool assigned, String dateString, String endTime) {
+  //   DateTime today = DateTime.now();
+  //   DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
+  //   TimeOfDay currentTime = TimeOfDay.now();
+  //   String now = currentTime.format(context);
+  //   if (assigned == false) {
+  //     jobSelector(context, jobId);
+  //   }
+  //   // if ((today.isAtSameMomentAs(date) &&
+  //   //         (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
+  //   //     today.isAfter(date)) {
+  //   //   print("job over");
+  //   //   //TO DO SORT COLOUR
+  //   //   jobConfirmation(context, jobId);
+  //   //}
+  //   else {
+  //     jobConfirmation(context, jobId);
+  //     // TO DO: error message nothing to do
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +240,7 @@ class CompanyJobState extends State<CompanyJob> {
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
-                          color: pickColour(job['assigned']),
+                          color: pickColour(job['assigned'], job['workerId']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),

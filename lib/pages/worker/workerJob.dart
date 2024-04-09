@@ -265,7 +265,7 @@ class WorkerJobState extends State<WorkerJob> {
           // Assuming there is only one entry, you can access it directly
           var assignedJobKey = data.keys.first;
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
-            'worker_id': " ",
+            'worker_id': ' ',
           });
         }
       }
