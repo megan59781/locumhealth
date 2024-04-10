@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
@@ -116,10 +117,10 @@ class CompanyJobState extends State<CompanyJob> {
                   String location = await getPlacemarks(lat, long);
                   print(location);
 
-                  if (workerId == ' ') {
+                  if (workerId == "none") {
                     jobDetailsList.add({
                       'jobId': jobId,
-                      'worker': "worker not assigned yet",
+                      'worker': "not assigned yet",
                       'date': date,
                       'startTime': jobStartTime,
                       'endTime': jobEndTime,
@@ -235,14 +236,22 @@ class CompanyJobState extends State<CompanyJob> {
     if (assigned) {
       return Colors.lightGreen[400]!;
     }
-    if (workerId == ' ') {
+    if (workerId == "none") {
       return Colors.pink[300]!;
     } else {
       return Colors.deepOrange[600]!;
     }
   }
 
-  void clicked(String jobId, bool assigned, String dateString, String endTime) {
+  int stringTimeToMins(String time) {
+    List<String> parts = time.split(':');
+    int hours = int.parse(parts[0]);
+    int minutes = int.parse(parts[1]);
+    return hours * 60 + minutes;
+  }
+
+  void clicked(String jobId, bool assigned, String workerId, String dateString,
+      String endTime) {
     DateTime today = DateTime.now();
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
     TimeOfDay currentTime = TimeOfDay.now();
@@ -250,16 +259,28 @@ class CompanyJobState extends State<CompanyJob> {
     if (assigned == true) {
       jobConfirmation(context, jobId);
       // }
-      // // if ((today.isAtSameMomentAs(date) &&
-      // //         (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
-      // //     today.isAfter(date)) {
-      // //   print("job over");
-      // //   //TO DO SORT COLOUR
-      // //   jobConfirmation(context, jobId);
+      // //
       // //}
       // else {
 
       //   // TO DO: error message nothing to do
+    } else if (workerId == 'none') {
+      // TO DO: re pick worker inform company
+      setState(() {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => CompanyWorkerList(
+                    companyId: widget.companyId,
+                    jobId: jobId,
+                    abilityList: const [])));
+      });
+    } else if ((today.isAtSameMomentAs(date) &&
+            (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
+        today.isAfter(date)) {
+      jobConfirmation(context, jobId);
+    } else {
+      // TO DO: error message say waiting for worker to accept
     }
   }
 
@@ -287,10 +308,8 @@ class CompanyJobState extends State<CompanyJob> {
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
-                        clicked(job['jobId'], job['assigned'], job['date'],
-                            job['endTime']);
-                        print(
-                            'Clicked on worker: ${job['worker']} location of job: ${job['location']} ');
+                        clicked(job['jobId'], job['assigned'], job['workerId'],
+                            job['date'], job['endTime']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items

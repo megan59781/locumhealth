@@ -265,7 +265,7 @@ class WorkerJobState extends State<WorkerJob> {
           // Assuming there is only one entry, you can access it directly
           var assignedJobKey = data.keys.first;
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
-            'worker_id': ' ',
+            'worker_id': "none",
           });
         }
       }
@@ -349,16 +349,14 @@ class WorkerJobState extends State<WorkerJob> {
     String now = currentTime.format(context);
     if (assigned == false) {
       jobSelector(context, jobId);
-    }
-    // if ((today.isAtSameMomentAs(date) &&
-    //         (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
-    //     today.isAfter(date)) {
-    //   print("job over");
-    //   //TO DO SORT COLOUR
-    //   jobConfirmation(context, jobId);
-    //}
-    else {
+    } else if ((today.isAtSameMomentAs(date) &&
+            (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
+        today.isAfter(date)) {
+      print("job over");
       jobConfirmation(context, jobId);
+    }
+    else {
+      //jobConfirmation(context, jobId);
       // TO DO: error message nothing to do
     }
   }
