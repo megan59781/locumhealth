@@ -61,6 +61,33 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     return haversine(lat1, lon1, lat2, lon2);
   }
 
+  List<String> getDeclinedWorkers(String jobId) {
+    List<String> declinedWorkers = [];
+    dbhandler
+        .child('Declined Workers')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var declinedKey = data.keys.first;
+          var declinedData = data[declinedKey];
+          declinedData.forEach((key, value) {
+            if (key != 'job_id') {
+              declinedWorkers.add(value);
+            }
+          });
+          print("HERE Worker LIST: $declinedWorkers");
+        }
+      }
+    });
+    return declinedWorkers;
+  }
+
   void getAvailablWorkers(
       String jobId, Function(List<String> workerList) getList) {
     print("Print this function is being passed");
@@ -120,6 +147,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
           // print("Company ID: $companyId");
           // print("Day Start Time: $dayStartTime");
           // print("Day End Time: $dayEndTime");
+          List<String> declinedWorkers = getDeclinedWorkers(jobId);
+          print("HERE declined Worker LIST: $declinedWorkers");
           dbhandler
               .child('Availability')
               .orderByChild('day_id')
@@ -142,44 +171,18 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                   if ((availStartTime <= stringTimeToMins(jobStartTime)) &&
                       (availEndTime >= stringTimeToMins(jobEndTime))) {
                     String workerId = value['worker_id'];
-                    availWorkerList.add(workerId);
+                    // Check if worker has declined the job
+                    if (declinedWorkers.contains(workerId)) {
+                      print('Worker $workerId has declined the job');
+                    } else {
+                      availWorkerList.add(workerId);
+                    }
                   }
                 });
 
+                print('old Worker List: $availWorkerList');
+
                 ///check declined workers if on list remove
-                for (String workerId in availWorkerList) {
-                  dbhandler
-                      .child('Declined Workers')
-                      .orderByChild('job_id')
-                      .equalTo(jobId)
-                      .onValue
-                      .listen((event) {
-                    if (event.snapshot.value != null) {
-                      Map<dynamic, dynamic>? data =
-                          event.snapshot.value as Map<dynamic, dynamic>?;
-                      if (data != null) {
-                        List<String> declinedWorkers = [];
-                        // Assuming there is only one entry, you can access it directly
-                        var declinedKey = data.keys.first;
-                        var declinedData = data[declinedKey];
-                        declinedData.forEach((key, value) {
-                          if (key != 'job_id') {
-                            declinedWorkers.add(key);
-                          }
-                        });
-                        print("HERE LIST: $declinedWorkers");
-
-                        // check if worker_id is in declined list
-                        if (declinedWorkers.contains(workerId)) {
-                          availWorkerList.remove(workerId);
-                        }
-                      }
-                    }
-                  });
-                }
-
-                // Now you have a list of jobs
-                print('Worker List: $availWorkerList');
 
                 List<String> matchedWorkerList = [];
 
@@ -281,8 +284,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     });
   }
 
-  Future<void> addAssignJobDb(String jobId, String companyId,
-      String workerId, BuildContext context) async {
+  Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
+      BuildContext context) async {
     dbhandler
         .child("Assigned Jobs")
         .orderByChild("job_id")
