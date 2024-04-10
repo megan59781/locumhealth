@@ -146,6 +146,38 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                   }
                 });
 
+                ///check declined workers if on list remove
+                for (String workerId in availWorkerList) {
+                  dbhandler
+                      .child('Declined Workers')
+                      .orderByChild('job_id')
+                      .equalTo(jobId)
+                      .onValue
+                      .listen((event) {
+                    if (event.snapshot.value != null) {
+                      Map<dynamic, dynamic>? data =
+                          event.snapshot.value as Map<dynamic, dynamic>?;
+                      if (data != null) {
+                        List<String> declinedWorkers = [];
+                        // Assuming there is only one entry, you can access it directly
+                        var declinedKey = data.keys.first;
+                        var declinedData = data[declinedKey];
+                        declinedData.forEach((key, value) {
+                          if (key != 'job_id') {
+                            declinedWorkers.add(key);
+                          }
+                        });
+                        print("HERE LIST: $declinedWorkers");
+
+                        // check if worker_id is in declined list
+                        if (declinedWorkers.contains(workerId)) {
+                          availWorkerList.remove(workerId);
+                        }
+                      }
+                    }
+                  });
+                }
+
                 // Now you have a list of jobs
                 print('Worker List: $availWorkerList');
 
@@ -203,14 +235,14 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                               event.snapshot.value as Map<dynamic, dynamic>?;
                           if (data != null) {
                             List<String> workerAbilities = [];
-                              // Assuming there is only one entry, you can access it directly
-                              var abilityKey = data.keys.first;
-                              var abilityData = data[abilityKey];
-                              abilityData.forEach((key, value) {
-                                if (key != 'worker_id') {
-                                  workerAbilities.add(key);
-                                }
-                              });
+                            // Assuming there is only one entry, you can access it directly
+                            var abilityKey = data.keys.first;
+                            var abilityData = data[abilityKey];
+                            abilityData.forEach((key, value) {
+                              if (key != 'worker_id') {
+                                workerAbilities.add(key);
+                              }
+                            });
                             print("HERE LIST: $workerAbilities");
 
                             // Check if all abilities are present
@@ -249,27 +281,69 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     });
   }
 
-  Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
-      BuildContext context) async {
-    String assignId = const Uuid().v4();
+  Future<void> addAssignJobDb(String jobId, String companyId,
+      String workerId, BuildContext context) async {
+    dbhandler
+        .child("Assigned Jobs")
+        .orderByChild("job_id")
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var jobKey = data.keys.first;
+          dbhandler.child("Assigned Jobs").child(jobKey).update({
+            "worker_id": workerId,
+          });
+          print("here new worker updated");
+        }
+      } else {
+        String assignId = const Uuid().v4();
 
-    Map<String, dynamic> assignJob = {
-      "assign_job_id": assignId,
-      "job_id": jobId,
-      "company_id": companyId,
-      "worker_id": workerId,
-      "worker_job_complete": false,
-      "company_job_complete": false,
-      "worker_accepted": false,
-    };
+        Map<String, dynamic> assignJob = {
+          "assign_job_id": assignId,
+          "job_id": jobId,
+          "company_id": companyId,
+          "worker_id": workerId,
+          "worker_job_complete": false,
+          "company_job_complete": false,
+          "worker_accepted": false,
+        };
 
-    try {
-      await dbhandler.child("Assigned Jobs").push().set(assignJob);
-      //Navigator.of(context).pop();
-    } catch (error) {
-      print("Error saving to Firebase: $error");
-    }
+        try {
+          await dbhandler.child("Assigned Jobs").push().set(assignJob);
+          //Navigator.of(context).pop();
+        } catch (error) {
+          print("Error saving to Firebase: $error");
+        }
+      }
+    });
   }
+
+  // Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
+  //     BuildContext context) async {
+  //   String assignId = const Uuid().v4();
+
+  //   Map<String, dynamic> assignJob = {
+  //     "assign_job_id": assignId,
+  //     "job_id": jobId,
+  //     "company_id": companyId,
+  //     "worker_id": workerId,
+  //     "worker_job_complete": false,
+  //     "company_job_complete": false,
+  //     "worker_accepted": false,
+  //   };
+
+  //   try {
+  //     await dbhandler.child("Assigned Jobs").push().set(assignJob);
+  //     //Navigator.of(context).pop();
+  //   } catch (error) {
+  //     print("Error saving to Firebase: $error");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

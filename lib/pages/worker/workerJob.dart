@@ -217,7 +217,7 @@ class WorkerJobState extends State<WorkerJob> {
   }
 
   Future<void> addDeclinedDb(String jobId, String workerId) async {
-    print("here function working");
+    print("here function working worker removed");
     dbhandler
         .child("Declined Workers")
         .orderByChild("job_id")
@@ -250,6 +250,7 @@ class WorkerJobState extends State<WorkerJob> {
   }
 
   Future<void> declineJob(String jobId) async {
+    print('jobid declined is $jobId');
     dbhandler
         .child('Assigned Jobs')
         .orderByChild('job_id')
