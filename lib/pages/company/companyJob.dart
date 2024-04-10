@@ -256,15 +256,7 @@ class CompanyJobState extends State<CompanyJob> {
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
     TimeOfDay currentTime = TimeOfDay.now();
     String now = currentTime.format(context);
-    if (assigned == true) {
-      jobConfirmation(context, jobId);
-      // }
-      // //
-      // //}
-      // else {
-
-      //   // TO DO: error message nothing to do
-    } else if (workerId == 'none') {
+    if (workerId == 'none') {
       // TO DO: re pick worker inform company
       setState(() {
         Navigator.push(
