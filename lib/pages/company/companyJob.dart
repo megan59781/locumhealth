@@ -21,6 +21,7 @@ class CompanyJobState extends State<CompanyJob> {
   void initState() {
     super.initState();
     String companyId = widget.companyId;
+
     setState(() {
       getJobs(companyId, (List<dynamic> jobDetailList) {
         setState(() {
@@ -54,23 +55,149 @@ class CompanyJobState extends State<CompanyJob> {
     }
   }
 
+  // void getJobs(String companyId, Function(List<dynamic> jobList) getJobsList) {
+  //   dbhandler
+  //       .child('Assigned Jobs')
+  //       .orderByChild('company_id')
+  //       .equalTo(companyId)
+  //       .onValue
+  //       .listen((DatabaseEvent event) {
+  //     if (event.snapshot.value != null) {
+  //       Map<dynamic, dynamic>? data =
+  //           event.snapshot.value as Map<dynamic, dynamic>?;
+
+  //       if (data != null) {
+  //         // Convert the Map<dynamic, dynamic> to a List
+  //         List<Map<String, dynamic>> jobIdList = [];
+  //         data.forEach((key, value) {
+  //           //Deal with jobs in the list
+  //           // bool isCompleted = value['is_completed'];
+  //           bool accepted = value['worker_accepted'];
+  //           String jobId = value['job_id'];
+  //           String workerId = value['worker_id'];
+  //           bool completed = value['company_job_complete'];
+
+  //           if (!completed) {
+  //             jobIdList.add(
+  //                 {"jobId": jobId, "workerId": workerId, "accepted": accepted});
+  //           }
+  //         });
+
+  //         List<Map<String, dynamic>> jobDetailsList = [];
+  //         print("jobIdList: $jobIdList");
+
+  //         for (var job in jobIdList) {
+  //           String jobId = job['jobId'];
+  //           String workerId = job['workerId'];
+  //           bool accepted = job['accepted'];
+  //           print("$jobId            w:$workerId");
+  //           dbhandler
+  //               .child('Jobs')
+  //               .orderByChild('job_id')
+  //               .equalTo(jobId)
+  //               .onValue
+  //               .listen((event) async {
+  //             print('Job Query output: ${event.snapshot.value}');
+  //             if (event.snapshot.value != null) {
+  //               Map<dynamic, dynamic>? data =
+  //                   event.snapshot.value as Map<dynamic, dynamic>?;
+  //               if (data != null) {
+  //                 // Assuming there is only one entry, you can access it directly
+  //                 var jobKey = data.keys.first;
+  //                 var jobData = data[jobKey];
+
+  //                 var date = jobData['date'];
+
+  //                 // if (DateTime.parse(date).isAfter(DateTime.now())) {
+  //                 var jobStartTime = jobData['job_start_time'];
+  //                 var jobEndTime = jobData['job_end_time'];
+
+  //                 double lat = jobData['latitude'];
+  //                 double long = jobData['longitude'];
+
+  //                 String location = await getPlacemarks(lat, long);
+  //                 print(location);
+
+  //                 if (workerId == "none") {
+  //                   jobDetailsList.add({
+  //                     'jobId': jobId,
+  //                     'worker': "not assigned yet",
+  //                     'date': date,
+  //                     'startTime': jobStartTime,
+  //                     'endTime': jobEndTime,
+  //                     'location': location,
+  //                     'assigned': accepted,
+  //                     'workerId': workerId
+  //                   });
+  //                 } else {
+  //                   dbhandler
+  //                       .child('Worker')
+  //                       .orderByChild('worker_id')
+  //                       .equalTo(workerId)
+  //                       .onValue
+  //                       .listen((event) async {
+  //                     print('Worker Query output: ${event.snapshot.value}');
+  //                     if (event.snapshot.value != null) {
+  //                       Map<dynamic, dynamic>? data =
+  //                           event.snapshot.value as Map<dynamic, dynamic>?;
+  //                       if (data != null) {
+  //                         var workerKey = data.keys.first;
+  //                         var workerData = data[workerKey];
+
+  //                         var worker = workerData['name'];
+
+  //                         jobDetailsList.add({
+  //                           'jobId': jobId,
+  //                           'worker': worker,
+  //                           'date': date,
+  //                           'startTime': jobStartTime,
+  //                           'endTime': jobEndTime,
+  //                           'location': location,
+  //                           'assigned': accepted,
+  //                           'workerId': workerId
+  //                         });
+  //                       }
+  //                     }
+  //                   });
+  //                 }
+  //               }
+  //             }
+  //           });
+  //         }
+
+  //         // HERE TO RETURN JOBS
+  //         print('jobs deatails list');
+  //         print(jobDetailsList);
+  //         setState(() {
+  //           getJobsList(jobDetailsList);
+  //         });
+  //       } else {
+  //         // Handle the case when there are no jobs assigned
+  //         setState(() {
+  //           getJobsList([]);
+  //         });
+  //         //getJobsList([]);
+  //       }
+  //     } else {
+  //       print("MEGAN IT fails: Data is not in the expected format");
+  //     }
+  //   });
+  // }
+
   void getJobs(String companyId, Function(List<dynamic> jobList) getJobsList) {
     dbhandler
         .child('Assigned Jobs')
         .orderByChild('company_id')
         .equalTo(companyId)
         .onValue
-        .listen((DatabaseEvent event) {
+        .listen((DatabaseEvent event) async {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
 
         if (data != null) {
-          // Convert the Map<dynamic, dynamic> to a List
           List<Map<String, dynamic>> jobIdList = [];
           data.forEach((key, value) {
-            //Deal with jobs in the list
-            // bool isCompleted = value['is_completed'];
             bool accepted = value['worker_accepted'];
             String jobId = value['job_id'];
             String workerId = value['worker_id'];
@@ -83,39 +210,32 @@ class CompanyJobState extends State<CompanyJob> {
           });
 
           List<Map<String, dynamic>> jobDetailsList = [];
-          print("jobIdList: $jobIdList");
 
           for (var job in jobIdList) {
             String jobId = job['jobId'];
             String workerId = job['workerId'];
             bool accepted = job['accepted'];
-            print("$jobId            w:$workerId");
-            dbhandler
+
+            await dbhandler
                 .child('Jobs')
                 .orderByChild('job_id')
                 .equalTo(jobId)
                 .onValue
-                .listen((event) async {
-              print('Job Query output: ${event.snapshot.value}');
+                .first
+                .then((event) async {
               if (event.snapshot.value != null) {
                 Map<dynamic, dynamic>? data =
                     event.snapshot.value as Map<dynamic, dynamic>?;
                 if (data != null) {
-                  // Assuming there is only one entry, you can access it directly
                   var jobKey = data.keys.first;
                   var jobData = data[jobKey];
 
                   var date = jobData['date'];
-
-                  // if (DateTime.parse(date).isAfter(DateTime.now())) {
                   var jobStartTime = jobData['job_start_time'];
                   var jobEndTime = jobData['job_end_time'];
-
                   double lat = jobData['latitude'];
                   double long = jobData['longitude'];
-
                   String location = await getPlacemarks(lat, long);
-                  print(location);
 
                   if (workerId == "none") {
                     jobDetailsList.add({
@@ -129,20 +249,19 @@ class CompanyJobState extends State<CompanyJob> {
                       'workerId': workerId
                     });
                   } else {
-                    dbhandler
+                    await dbhandler
                         .child('Worker')
                         .orderByChild('worker_id')
                         .equalTo(workerId)
                         .onValue
-                        .listen((event) async {
-                      print('Worker Query output: ${event.snapshot.value}');
+                        .first
+                        .then((event) {
                       if (event.snapshot.value != null) {
                         Map<dynamic, dynamic>? data =
                             event.snapshot.value as Map<dynamic, dynamic>?;
                         if (data != null) {
                           var workerKey = data.keys.first;
                           var workerData = data[workerKey];
-
                           var worker = workerData['name'];
 
                           jobDetailsList.add({
@@ -164,16 +283,16 @@ class CompanyJobState extends State<CompanyJob> {
             });
           }
 
-          // HERE TO RETURN JOBS
-          print('jobs deatails list');
-          print(jobDetailsList);
-          getJobsList(jobDetailsList);
+          setState(() {
+            getJobsList(jobDetailsList);
+          });
         } else {
-          // Handle the case when there are no jobs assigned
-          getJobsList([]);
+          setState(() {
+            getJobsList([]);
+          });
         }
       } else {
-        print("MEGAN IT fails: Data is not in the expected format");
+        print("Data is not in the expected format");
       }
     });
   }
@@ -221,7 +340,9 @@ class CompanyJobState extends State<CompanyJob> {
             ),
             TextButton(
               onPressed: () {
-                confirmJob(jobId);
+                setState(() {
+                  confirmJob(jobId);
+                });
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
@@ -270,7 +391,9 @@ class CompanyJobState extends State<CompanyJob> {
     } else if ((today.isAtSameMomentAs(date) &&
             (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
         today.isAfter(date)) {
-      jobConfirmation(context, jobId);
+      setState(() {
+        jobConfirmation(context, jobId);
+      });
     } else {
       // TO DO: error message say waiting for worker to accept
     }
@@ -300,8 +423,10 @@ class CompanyJobState extends State<CompanyJob> {
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
-                        clicked(job['jobId'], job['assigned'], job['workerId'],
-                            job['date'], job['endTime']);
+                        setState(() {
+                          clicked(job['jobId'], job['assigned'],
+                              job['workerId'], job['date'], job['endTime']);
+                        });
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
