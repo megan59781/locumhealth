@@ -61,7 +61,7 @@ class LoginState extends State<Login> {
         .onValue
         .take(1)
         .listen((event) async {
-      print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
+      //print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
         DateTime? bday = await _dateSelector(context);
         List<double> location = await getCurrentLatLong();
@@ -77,7 +77,7 @@ class LoginState extends State<Login> {
         dbhandler.child("Worker").push().set(worker).then((value) async {
           await Future.delayed(const Duration(seconds: 5));
         }).catchError((error) {
-          print("Error saving to Firebase: $error");
+          //print("Error saving to Firebase: $error");
         });
       }
     });

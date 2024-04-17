@@ -15,6 +15,54 @@ class WorkerAbility extends StatefulWidget {
 class WorkerAbilityState extends State<WorkerAbility> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
 
+  @override
+  void initState() {
+    super.initState();
+    updateView(widget.workerId);
+  }
+
+  Future<void> updateView(String workerId) async {
+    // updates the day button with the current day + times availability
+    dbhandler
+        .child('Ability')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          List<String> workerAbilities = [];
+          var abilityKey = data.keys.first;
+          var abilityData = data[abilityKey];
+          abilityData.forEach((key, value) {
+            if (key != 'worker_id') {
+              workerAbilities.add(key);
+            }
+          });
+          print("HERE LIST: $workerAbilities");
+          // TO DO - update the view with the ability
+          setState(() {
+            selectedAbilitys = workerAbilities; // Update selected abilities
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> addAbilitysDb() async {
+    Map<String, dynamic> abilityList = {
+      "worker_id": widget.workerId,
+    };
+    for (String ability in selectedAbilitys) {
+      abilityList.addAll({
+        ability: true,
+      });
+    }
+    await dbhandler.child("Ability").push().set(abilityList);
+  }
+
   List<String> selectedAbilitys = [];
   static const List<String> selections = <String>[
     'First Aid',
@@ -31,18 +79,6 @@ class WorkerAbilityState extends State<WorkerAbility> {
     'PEG Feeding Training',
     'Restrained Training',
   ];
-
-  Future<void> addAbilitysDb() async {
-    Map<String, dynamic> abilityList = {
-      "worker_id": widget.workerId,
-    };
-    for (String ability in selectedAbilitys) {
-      abilityList.addAll({
-        ability: true,
-      });
-    }
-    await dbhandler.child("Ability").push().set(abilityList);
-  }
 
   @override
   Widget build(BuildContext context) {

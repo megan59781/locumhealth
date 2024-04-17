@@ -373,7 +373,7 @@ class WorkerJobState extends State<WorkerJob> {
                 child: ListView.builder(
                   itemCount: jobList.length,
                   itemBuilder: (context, index) {
-                    // Assuming each worker is represented as a Map
+                    // Assuming each worker is represented as a Map 
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
