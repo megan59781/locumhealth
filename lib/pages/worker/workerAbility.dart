@@ -51,16 +51,37 @@ class WorkerAbilityState extends State<WorkerAbility> {
     });
   }
 
-  Future<void> addAbilitysDb() async {
-    Map<String, dynamic> abilityList = {
-      "worker_id": widget.workerId,
-    };
-    for (String ability in selectedAbilitys) {
-      abilityList.addAll({
-        ability: true,
-      });
-    }
-    await dbhandler.child("Ability").push().set(abilityList);
+  Future<void> addAbilitysDb(String workerId) async {
+    dbhandler
+        .child('Ability')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var abilityKey = data.keys.first;
+          //var abilityData = data[abilityKey];
+          for (String ability in selectedAbilitys) {
+            await dbhandler.child("Ability").child(abilityKey).update({
+              ability: true,
+            });
+          }
+        }
+      } else {
+        Map<String, dynamic> abilityList = {
+          "worker_id": widget.workerId,
+        };
+        for (String ability in selectedAbilitys) {
+          abilityList.addAll({
+            ability: true,
+          });
+        }
+        await dbhandler.child("Ability").push().set(abilityList);
+      }
+    });
   }
 
   List<String> selectedAbilitys = [];
@@ -137,7 +158,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
                   buttonSize: 70,
                   text: 'Submit Abilities',
                   onPress: () {
-                    addAbilitysDb();
+                    addAbilitysDb(widget.workerId);
                     //Navigator.pop(context);
                   },
                 ),
