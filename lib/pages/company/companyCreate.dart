@@ -31,6 +31,105 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
   TimeOfDay startTime = TimeOfDay.now();
   TimeOfDay endTime = TimeOfDay.now();
 
+  List<String> selectedAbilitys = [];
+  static const List<String> selections = <String>[
+    'First Aid',
+    'Manual Handling',
+    'Medicication Administration',
+    'Mental Health Training',
+    'Elderly Care Training',
+    'Child Care Training',
+    'Disability Care Training',
+    'Palliative Care Training',
+    'Dementia Care Training',
+    'Stoma Training',
+    'Catheter Training',
+    'PEG Feeding Training',
+    'Restrained Training',
+  ];
+
+  Future<void> abilitySelector(
+      BuildContext context, List<String> selections) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Required Abilities'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (BuildContext context, int index) {
+                          final String ability = selections[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10.0,
+                              vertical: 3.0,
+                            ),
+                            child: Row(
+                              children: [
+                                Checkbox(
+                                  value: selectedAbilitys.contains(ability),
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      if (value != null) {
+                                        if (value) {
+                                          selectedAbilitys.add(ability);
+                                        } else {
+                                          selectedAbilitys.remove(ability);
+                                        }
+                                      }
+                                    });
+                                  },
+                                ),
+                                Text(
+                                  ability,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 15,
+                                    decorationStyle: TextDecorationStyle.wavy,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        itemCount: selections.length,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                print(selectedAbilitys);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _dateSelector(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
         context: context,
@@ -71,7 +170,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
+              children: <Widget>[
                 const DisplayText(
                     text: "Selected Time", fontSize: 25, colour: Colors.black),
                 const SizedBox(height: 5),
@@ -118,8 +217,6 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     );
   }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-  ///
   Future<void> locationSelector(BuildContext context) async {
     return showDialog(
       context: context,
@@ -239,7 +336,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
             const SizedBox(height: 10),
             const DisplayText(
                 text: 'Create a New Job', fontSize: 34, colour: Colors.black),
-            const SizedBox(height: 50),
+            const SizedBox(height: 20),
             const DisplayText(
                 text: 'Select Date of the Job',
                 fontSize: 30,
@@ -257,7 +354,12 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                     onPress: () => _dateSelector(context),
                   ),
                 ]),
-            const SizedBox(height: 50),
+            const SizedBox(height: 20),
+            PushButton(
+                buttonSize: 55,
+                text: "Select Abilitys",
+                onPress: () => abilitySelector(context, selections)),
+            const SizedBox(height: 20),
             const DisplayText(
                 text: 'Select Time of the Job',
                 fontSize: 30,
@@ -330,7 +432,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => CompanyWorkerList(
-                                companyId: widget.companyId, jobId: jobId)));
+                                companyId: widget.companyId, jobId: jobId, abilityList: selectedAbilitys)));
                   });
                 });
               },

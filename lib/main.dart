@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:fyp/pages/login.dart';
-//import 'package:fyp/pages/login.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +11,7 @@ Future main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
 
   // This widget is the root of your application.
   @override
@@ -26,3 +26,8 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
+
+                  
+                

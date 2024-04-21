@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:intl/intl.dart';
 
 class WorkerJob extends StatefulWidget {
   final String workerId;
@@ -19,11 +20,9 @@ class WorkerJobState extends State<WorkerJob> {
   void initState() {
     super.initState();
     String workerId = widget.workerId;
-    setState(() {
-      getJobs(workerId, (List<dynamic> jobDetailList) {
-        setState(() {
-          jobList = jobDetailList;
-        });
+    getJobs(workerId, (List<dynamic> jobDetailList) {
+      setState(() {
+        jobList = jobDetailList;
       });
     });
   }
@@ -58,79 +57,300 @@ class WorkerJobState extends State<WorkerJob> {
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
-        .listen((DatabaseEvent event) {
+        .listen((DatabaseEvent event) async {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
 
         if (data != null) {
-          // Convert the Map<dynamic, dynamic> to a List
           List<Map<String, dynamic>> jobIdList = [];
           data.forEach((key, value) {
-            //Deal with jobs in the list
             String jobId = value['job_id'];
             String companyId = value['company_id'];
-            jobIdList.add({"jobId": jobId, "companyId": companyId});
+            bool accepted = value['worker_accepted'];
+            bool completed = value['worker_job_complete'];
+
+            if (!completed) {
+              jobIdList.add({
+                "jobId": jobId,
+                "companyId": companyId,
+                "accepted": accepted
+              });
+            }
           });
 
           List<Map<String, dynamic>> jobDetailsList = [];
-          print("jobIdList: $jobIdList");
 
           for (var job in jobIdList) {
             String jobId = job['jobId'];
             String companyId = job['companyId'];
-            print("$jobId            w:$companyId");
-            dbhandler
+            bool accepted = job['accepted'];
+
+            await dbhandler
                 .child('Jobs')
                 .orderByChild('job_id')
                 .equalTo(jobId)
                 .onValue
-                .listen((event) async {
-              print('Job Query output: ${event.snapshot.value}');
+                .first
+                .then((event) async {
               if (event.snapshot.value != null) {
                 Map<dynamic, dynamic>? data =
                     event.snapshot.value as Map<dynamic, dynamic>?;
                 if (data != null) {
-                  // Assuming there is only one entry, you can access it directly
                   var jobKey = data.keys.first;
                   var jobData = data[jobKey];
 
                   var date = jobData['date'];
                   var jobStartTime = jobData['job_start_time'];
                   var jobEndTime = jobData['job_end_time'];
-
-                  // TO DO CACLULATE AND DISPLAY LOCTAION WITH JOB
                   double lat = jobData['latitude'];
                   double long = jobData['longitude'];
-
                   String location = await getPlacemarks(lat, long);
-                  print(location);
 
-                  jobDetailsList.add({
-                    'jobId': jobId,
-                    'company': companyId,
-                    'date': date,
-                    'startTime': jobStartTime,
-                    'endTime': jobEndTime,
-                    'location': location,
+                  await dbhandler
+                      .child('Company')
+                      .orderByChild('company_id')
+                      .equalTo(companyId)
+                      .onValue
+                      .first
+                      .then((event) {
+                    if (event.snapshot.value != null) {
+                      Map<dynamic, dynamic>? data =
+                          event.snapshot.value as Map<dynamic, dynamic>?;
+                      if (data != null) {
+                        for (var companyKey in data.keys) {
+                          var companyData = data[companyKey];
+                          String companyName = companyData['name'];
+
+                          jobDetailsList.add({
+                            'jobId': jobId,
+                            'company': companyName,
+                            'date': date,
+                            'startTime': jobStartTime,
+                            'endTime': jobEndTime,
+                            'location': location,
+                            "assigned": accepted,
+                          });
+                        }
+                      }
+                    }
                   });
                 }
               }
             });
           }
 
-          // HERE TO RETURN JOBS
-          print('jobs deatails list');
-          print(jobDetailsList);
-          getJobsList(jobDetailsList);
+          setState(() {
+            getJobsList(jobDetailsList);
+          });
         } else {
-          // Handle the case when there are no jobs assigned
-          getJobsList([]);
+          setState(() {
+            getJobsList([]);
+          });
         }
       } else {
-        print("MEGAN IT fails: Data is not in the expected format");
+        print("Data is not in the expected format");
       }
     });
+  }
+
+  Color pickColour(bool assigned) {
+    if (assigned) {
+      return Colors.lightGreen[400]!;
+    } else {
+      return Colors.deepOrange[400]!;
+    }
+  }
+
+  Future<void> acceptJob(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            'worker_accepted': true,
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> confirmJob(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            "worker_job_complete": true,
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> addDeclinedDb(String jobId, String workerId) async {
+    print("here function working worker removed");
+    dbhandler
+        .child("Declined Workers")
+        .orderByChild("job_id")
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var jobKey = data.keys.first;
+          var jobData = data[jobKey];
+          int count = (jobData.length) - 1;
+          String newKey = "worker_id_$count";
+          dbhandler.child("Declined Workers").child(jobKey).update({
+            newKey: workerId,
+          });
+          print("here data exists");
+        }
+      } else {
+        Map<String, dynamic> workers = {
+          "job_id": jobId,
+          "worker_id_0": workerId,
+        };
+        await dbhandler.child("Declined Workers").push().set(workers);
+        print("added HERE");
+      }
+    });
+  }
+
+  Future<void> declineJob(String jobId) async {
+    print('jobid declined is $jobId');
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            'worker_id': "none",
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> jobSelector(BuildContext context, String jobId) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Do you want to accept this job?'),
+          content: const DisplayText(
+              text: 'Please select Yes to accept the job or No to decline.',
+              fontSize: 20,
+              colour: Colors.black),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                declineJob(jobId);
+                addDeclinedDb(jobId, widget.workerId);
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                acceptJob(jobId);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> jobConfirmation(BuildContext context, String jobId) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Has the job been completed?'),
+          content: const DisplayText(
+              text:
+                  'Please select Yes to confirm the job complettion or No if it has not.',
+              fontSize: 20,
+              colour: Colors.black),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                confirmJob(jobId);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  int stringTimeToMins(String time) {
+    List<String> parts = time.split(':');
+    int hours = int.parse(parts[0]);
+    int minutes = int.parse(parts[1]);
+    return hours * 60 + minutes;
+  }
+
+  void clicked(String jobId, bool assigned, String dateString, String endTime) {
+    DateTime today = DateTime.now();
+    DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
+    TimeOfDay currentTime = TimeOfDay.now();
+    String now = currentTime.format(context);
+    if (assigned == false) {
+      jobSelector(context, jobId);
+    } else if ((today.isAtSameMomentAs(date) &&
+            (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
+        today.isAfter(date)) {
+      print("job over");
+      jobConfirmation(context, jobId);
+    } else {
+      //jobConfirmation(context, jobId);
+      // TO DO: error message nothing to do
+    }
   }
 
   @override
@@ -153,18 +373,19 @@ class WorkerJobState extends State<WorkerJob> {
                 child: ListView.builder(
                   itemCount: jobList.length,
                   itemBuilder: (context, index) {
-                    // Assuming each worker is represented as a Map
+                    // Assuming each worker is represented as a Map 
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
-                        print(
-                            'Clicked on worker: ${job['worker']} location of job: ${job['location']} ');
+                        clicked(job['jobId'], job['assigned'], job['date'],
+                            job['endTime']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
+                          color: pickColour(job['assigned']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),

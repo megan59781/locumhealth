@@ -4,7 +4,7 @@ import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:geolocator/geolocator.dart';
+//import 'package:geolocator/geolocator.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class WorkerPreference extends StatefulWidget {
@@ -18,13 +18,16 @@ class WorkerPreference extends StatefulWidget {
 
 class WorkerPreferenceState extends State<WorkerPreference> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
-  int currentMilesVal = 1;
+  int? currentMilesVal;
   TimeOfDay selectedTime = TimeOfDay.now();
-
-  final TextEditingController locationController = TextEditingController();
   double lat = 0.0;
   double long = 0.0;
-  String currentLocation = "get location";
+
+  String currentLocation = "to get";
+
+  final TextEditingController locationController = TextEditingController();
+
+  //"get location";
 
   bool selMon = false;
   TimeOfDay monStartTime = const TimeOfDay(hour: 0, minute: 0);
@@ -48,22 +51,120 @@ class WorkerPreferenceState extends State<WorkerPreference> {
   TimeOfDay sunStartTime = const TimeOfDay(hour: 0, minute: 0);
   TimeOfDay sunEndTime = const TimeOfDay(hour: 0, minute: 0);
 
-  Future<List<double>> getCurrentLatLong() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        forceAndroidLocationManager: true,
-      );
+  Future<void> updateView(String workerId) async {
+    // updates the day button with the current day + times availability
+    dbhandler
+        .child('Availability')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((DatabaseEvent event) {
+      if (event.snapshot.value != null) {
+        // Explicitly cast to Map<dynamic, dynamic>
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
 
-      double latitude = position.latitude;
-      double longitude = position.longitude;
+        if (data != null) {
+          data.forEach((key, value) {
+            int dayId = value["day_id"];
+            TimeOfDay startTime = TimeOfDay.fromDateTime(
+                DateTime.parse("2024-01-01 ${value["day_start_time"]}"));
+            TimeOfDay endTime = TimeOfDay.fromDateTime(
+                DateTime.parse("2024-01-01 ${value["day_end_time"]}"));
+            switch (dayId) {
+              case 1:
+                setState(() {
+                  selMon = true;
+                  monStartTime = startTime;
+                  monEndTime = endTime;
+                });
+                break;
+              case 2:
+                setState(() {
+                  selTue = true;
+                  tueStartTime = startTime;
+                  tueEndTime = endTime;
+                });
+                break;
+              case 3:
+                setState(() {
+                  selWed = true;
+                  wedStartTime = startTime;
+                  wedEndTime = endTime;
+                });
+                break;
+              case 4:
+                setState(() {
+                  selThu = true;
+                  thuStartTime = startTime;
+                  thuEndTime = endTime;
+                });
+                break;
+              case 5:
+                setState(() {
+                  selFri = true;
+                  friStartTime = startTime;
+                  friEndTime = endTime;
+                });
+                break;
+              case 6:
+                setState(() {
+                  selSat = true;
+                  satStartTime = startTime;
+                  satEndTime = endTime;
+                });
+                break;
+              case 7:
+                setState(() {
+                  selSun = true;
+                  sunStartTime = startTime;
+                  sunEndTime = endTime;
+                });
+                break;
+              default:
+            }
+          });
+        }
+      } else {
+        // Handle error
+        print('error');
+      }
+    });
+    // updates the location text with current location
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .first
+        .then((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var wKey = data.keys.first;
+          var wData = data[wKey];
 
-      return [latitude, longitude];
-    } catch (e) {
-      //print(e);
-      // You might want to handle the error accordingly, for example, returning a default location.
-      return [0.0, 0.0];
-    }
+          double lat = wData['latitude'];
+          double long = wData['longitude'];
+          int miles = wData['miles'];
+
+          String location = await getPlacemarks(lat, long);
+
+          setState(() {
+            currentLocation = location;
+            currentMilesVal = miles;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    updateView(widget.workerId);
   }
 
   Future<String> getPlacemarks(double lat, double long) async {
@@ -90,22 +191,118 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  Future<void> addAvailableDb(int dayId, String workerId, TimeOfDay startTime,
-      TimeOfDay endTime, BuildContext context) async {
-    Map<String, dynamic> available = {
-      "day_id": dayId,
-      "worker_id": workerId,
-      "day_start_time": startTime.format(context),
-      "day_end_time": endTime.format(context),
-      "miles": currentMilesVal,
-    };
+  Future<void> adjustAvailableDb(int dayId, String workerId,
+      TimeOfDay startTime, TimeOfDay endTime, BuildContext context) async {
+    dbhandler
+        .child("Availability")
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((event) async {
+      DataSnapshot snapshot = event.snapshot;
 
-    try {
-      await dbhandler.child("Availability").push().set(available);
-      //Navigator.of(context).pop();
-    } catch (error) {
-      print("Error saving to Firebase: $error");
-    }
+      if (snapshot.value != null) {
+        Map<dynamic, dynamic>? data = snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          var existingEntryKey;
+          data.forEach((key, value) {
+            if (value["day_id"] == dayId) {
+              existingEntryKey = key;
+            }
+          });
+
+          if (existingEntryKey != null) {
+            // Update existing entry
+            await dbhandler
+                .child("Availability")
+                .child(existingEntryKey)
+                .update({
+              "day_start_time": startTime.format(context),
+              "day_end_time": endTime.format(context)
+            });
+          } else {
+            // Add new entry
+            Map<String, dynamic> available = {
+              "day_id": dayId,
+              "worker_id": workerId,
+              "day_start_time": startTime.format(context),
+              "day_end_time": endTime.format(context)
+            };
+            await dbhandler.child("Availability").push().set(available);
+          }
+        }
+      } else {
+        // Handle case when there are no existing entries
+        // Add new entry since there's no existing entry for the worker
+        Map<String, dynamic> available = {
+          "day_id": dayId,
+          "worker_id": workerId,
+          "day_start_time": startTime.format(context),
+          "day_end_time": endTime.format(context)
+        };
+        await dbhandler.child("Availability").push().set(available);
+      }
+    });
+  }
+
+  Future<void> updateWorkerMilesDb(
+      String workerId, int miles, BuildContext context) async {
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .take(1)
+        .listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          data.forEach((key, value) {
+            dbhandler
+                .child("Worker")
+                .child(key)
+                .update({"miles": miles}).then((value) {
+              //Navigator.of(context).pop();
+            }).catchError((error) {
+              print("Error saving to Firebase: $error");
+            });
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> updateWorkerLocationDb(
+      String workerId, double lat, double long, BuildContext context) async {
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .take(1)
+        .listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          data.forEach((key, value) {
+            dbhandler
+                .child("Worker")
+                .child(key)
+                .update({"latitude": lat, "longitude": long}).then((value) {
+              //Navigator.of(context).pop();
+            }).catchError((error) {
+              print("Error saving to Firebase: $error");
+            });
+          });
+        }
+      } else {
+        // Handle error
+        print('error');
+      }
+    });
   }
 
   Future<void> locationSelector(BuildContext context) async {
@@ -126,9 +323,13 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
-                getLocationCoordinates(context);
+                Map<String, double> coordinates =
+                    await getLocationCoordinates(context);
+                double? lat = coordinates['latitude'];
+                double? long = coordinates['longitude'];
+                _updateLocation(context, lat, long);
               },
               child: const Text('Submit'),
             ),
@@ -138,30 +339,57 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     );
   }
 
-  Future<void> getLocationCoordinates(BuildContext context) async {
+  Future<Map<String, double>> getLocationCoordinates(
+      BuildContext context) async {
     final String location = locationController.text;
+    Map<String, double> coordinates = {};
 
     try {
       List<Location> locations = await locationFromAddress(location);
       if (locations.isNotEmpty) {
-        lat = locations[0].latitude;
-        long = locations[0].longitude;
-        currentLocation =
-            await getPlacemarks(lat, long); //pass through placemarks
-        print(lat);
-        print(long);
+        double lat = locations[0].latitude;
+        double long = locations[0].longitude;
+        //currentLocation = await getPlacemarks(lat, long); //pass through placemarks
+        // print(lat);
+        // print(long);
+        coordinates = {'latitude': lat, 'longitude': long};
       } else {
         print('No location found for: $location');
       }
     } catch (e) {
       print('Error during geocoding: $e');
     }
+
+    return coordinates;
+  }
+
+  Future<void> _updateLocation(
+      BuildContext context, double? lat, double? long) async {
+    if (lat != null && long != null) {
+      // if lat and long are not null
+      updateWorkerLocationDb(widget.workerId, lat, long, context);
+      String location = await getPlacemarks(lat, long);
+      setState(() {
+        currentLocation = location;
+      });
+    }
+  }
+
+  Future<void> _updateMiles(BuildContext context) async {
+    int? miles = await _milesSelector(context);
+    if (miles != null) {
+      updateWorkerMilesDb(widget.workerId, miles, context);
+      setState(() {
+        currentMilesVal = miles;
+      });
+    }
   }
 
   Future<int?> _milesSelector(BuildContext context) async {
-    return showDialog<int>(
+    int? selectedMiles = await showDialog<int>(
         context: context,
         builder: (BuildContext context) {
+          int miles = currentMilesVal ?? 1;
           return AlertDialog(
             title: const DisplayText(
                 text: "Select the maxium miles",
@@ -175,15 +403,18 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
                         NumberPicker(
-                          selectedTextStyle: const TextStyle(
-                              color: Colors.deepPurple, fontSize: 20),
-                          value: currentMilesVal,
-                          minValue: 1,
-                          maxValue: 25,
-                          step: 1,
-                          onChanged: (value) =>
-                              setState(() => currentMilesVal = value),
-                        )
+                            selectedTextStyle: const TextStyle(
+                                color: Colors.deepPurple, fontSize: 20),
+                            value: miles,
+                            minValue: 1,
+                            maxValue: 25,
+                            step: 1,
+                            onChanged: (value) {
+                              setState(() {
+                                miles = value;
+                                currentMilesVal = value;
+                              });
+                            })
                       ]);
                 })),
             actions: [
@@ -191,15 +422,16 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 child: const DisplayText(
                     text: "Submit", fontSize: 20, colour: Colors.black),
                 onPressed: () {
-                  // TO DO SAVE
-                  Navigator.of(context).pop(currentMilesVal);
+                  Navigator.of(context).pop(miles);
                 },
               )
             ],
           );
         });
+    return selectedMiles;
   }
 
+  // function handles time selected and update _timeSelector widgit
   Future<TimeOfDay> _selectTime(TextEditingController controller) async {
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
@@ -274,13 +506,23 @@ class WorkerPreferenceState extends State<WorkerPreference> {
               ),
               child: const Text('Submit'),
               onPressed: () {
-                // TO DO SAVE TIMES
                 TimeOfDay startTime = TimeOfDay.fromDateTime(
                     DateTime.parse("2024-01-01 ${startTimeController.text}"));
                 TimeOfDay endTime = TimeOfDay.fromDateTime(
                     DateTime.parse("2024-01-01 ${endTimeController.text}"));
-                updateSelected(true, startTime, endTime);
-                Navigator.of(context).pop();
+                if (endTime.hour < startTime.hour ||
+                    (endTime.hour == startTime.hour &&
+                        endTime.minute <= startTime.minute)) {
+                  // Invalid end time, show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('End time must be after start time.'),
+                    ),
+                  );
+                }else{
+                  updateSelected(true, startTime, endTime);
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ],
@@ -294,7 +536,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     String workerId = widget.workerId;
     return MaterialApp(
         home: Scaffold(
-      backgroundColor: Colors.brown[100],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: Column(
@@ -429,63 +671,30 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 fontSize: 20,
                 colour: Colors.black,
               ),
-              FutureBuilder<List<double>>(
-                future: getCurrentLatLong(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  } else if (snapshot.hasError || snapshot.data == null) {
-                    return const DisplayText(
-                      text: 'Error getting location',
-                      fontSize: 20,
-                      colour: Colors.deepPurple,
-                    );
-                  } else {
-                    double lat = snapshot.data![0];
-                    double long = snapshot.data![1];
-                    return FutureBuilder<String>(
-                      future: getPlacemarks(lat, long),
-                      builder: (context, locateSnapshot) {
-                        if (locateSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (locateSnapshot.hasError) {
-                          return Text('Error: ${locateSnapshot.error}');
-                        } else {
-                          // Data has been fetched successfully, use locateSnapshot.data as a String
-                          return DisplayText(
-                            text: locateSnapshot.data!,
-                            fontSize: 20,
-                            colour: Colors.deepPurple,
-                          );
-                        }
-                      },
-                    );
-                  }
-                },
-              ),
+              DisplayText(
+                  text: currentLocation,
+                  fontSize: 20,
+                  colour: Colors.deepPurple),
               const SizedBox(height: 20),
               PushButton(
                 buttonSize: 60,
-                text: 'My location is wrong', // TO DO MAKE SHOW MAIN LOCATION
+                text: 'Change Location', // TO DO MAKE SHOW MAIN LOCATION
                 onPress: () {
                   locationSelector(context);
                 },
               ),
               const SizedBox(height: 50),
               DisplayText(
-                  text: "Maxium Miles Traveled: $currentMilesVal",
-                  fontSize: 20,
-                  colour: Colors.black),
+                text: "Maximum Miles Traveled: ${currentMilesVal ?? 'Not set'}",
+                fontSize: 20,
+                colour: Colors.black,
+              ),
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 60,
                   text: 'Change Miles',
                   onPress: () {
-                    _milesSelector(context);
-                    setState(() {
-                      currentMilesVal;
-                    });
+                    _updateMiles(context);
                   }),
               const SizedBox(height: 50),
               PushButton(
@@ -493,31 +702,31 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 text: 'Submit Preferences',
                 onPress: () async {
                   if (selMon) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         1, workerId, monStartTime, monEndTime, context);
                   }
                   if (selTue) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         2, workerId, tueStartTime, tueEndTime, context);
                   }
                   if (selWed) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         3, workerId, wedStartTime, wedEndTime, context);
                   }
                   if (selThu) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         4, workerId, thuStartTime, thuEndTime, context);
                   }
                   if (selFri) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         5, workerId, friStartTime, friEndTime, context);
                   }
                   if (selSat) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         6, workerId, satStartTime, satEndTime, context);
                   }
                   if (selSun) {
-                    addAvailableDb(
+                    adjustAvailableDb(
                         7, workerId, sunStartTime, sunEndTime, context);
                   }
                 },
