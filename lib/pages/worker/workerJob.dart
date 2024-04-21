@@ -69,6 +69,7 @@ class WorkerJobState extends State<WorkerJob> {
             String companyId = value['company_id'];
             bool accepted = value['worker_accepted'];
             bool completed = value['worker_job_complete'];
+            //TO DO ADD RISK
 
             if (!completed) {
               jobIdList.add({

@@ -73,10 +73,11 @@ class CompanyJobState extends State<CompanyJob> {
             String jobId = value['job_id'];
             String workerId = value['worker_id'];
             bool completed = value['company_job_complete'];
+            String riskSupport = value['risk_support_plans'];
 
             if (!completed) {
               jobIdList.add(
-                  {"jobId": jobId, "workerId": workerId, "accepted": accepted});
+                  {"jobId": jobId, "workerId": workerId, "accepted": accepted, "riskSupport": riskSupport});
             }
           });
 
@@ -86,6 +87,7 @@ class CompanyJobState extends State<CompanyJob> {
             String jobId = job['jobId'];
             String workerId = job['workerId'];
             bool accepted = job['accepted'];
+            String riskSupport = job['riskSupport'];
 
             await dbhandler
                 .child('Jobs')
@@ -117,7 +119,8 @@ class CompanyJobState extends State<CompanyJob> {
                       'endTime': jobEndTime,
                       'location': location,
                       'assigned': accepted,
-                      'workerId': workerId
+                      'workerId': workerId,
+                      'riskSupport': riskSupport
                     });
                   } else {
                     await dbhandler
@@ -143,7 +146,8 @@ class CompanyJobState extends State<CompanyJob> {
                             'endTime': jobEndTime,
                             'location': location,
                             'assigned': accepted,
-                            'workerId': workerId
+                            'workerId': workerId,
+                            'riskSupport': riskSupport
                           });
                         }
                       }
@@ -224,6 +228,44 @@ class CompanyJobState extends State<CompanyJob> {
     );
   }
 
+  Future<void> addRiskSupportPlans(BuildContext context, String jobId) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Has the job been completed?'),
+          content: const Column(
+            children: [
+              DisplayText(
+                text: 'Please select Yes to confirm the job completion or No if it has not.',
+                fontSize: 20,
+                colour: Colors.black,
+              ),
+              //TO DO: ADD BUTTONS TO ADD PICS
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  // TO DO: add risk support plans to database
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Color pickColour(bool assigned, String workerId) {
     if (assigned) {
       return Colors.lightGreen[400]!;
@@ -243,7 +285,7 @@ class CompanyJobState extends State<CompanyJob> {
   }
 
   void clicked(String jobId, bool assigned, String workerId, String dateString,
-      String endTime) {
+      String endTime, String riskSupport) {
     DateTime today = DateTime.now();
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
     TimeOfDay currentTime = TimeOfDay.now();
@@ -265,6 +307,9 @@ class CompanyJobState extends State<CompanyJob> {
       setState(() {
         jobConfirmation(context, jobId);
       });
+    } else if (riskSupport == 'false' && assigned == true) {
+      // TO DO: add risk support plans
+      // TO DO: pop up to add plans
     } else {
       // TO DO: error message say waiting for worker to accept
     }
@@ -296,7 +341,7 @@ class CompanyJobState extends State<CompanyJob> {
                       onTap: () async {
                         setState(() {
                           clicked(job['jobId'], job['assigned'],
-                              job['workerId'], job['date'], job['endTime']);
+                              job['workerId'], job['date'], job['endTime'], job['riskSupport']);
                         });
                       },
                       child: Container(
