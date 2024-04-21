@@ -240,36 +240,184 @@ class CompanyJobState extends State<CompanyJob> {
     );
   }
 
-  
+  Future<void> addRiskSupportDb(String jobId) async {
+    String riskImg = base64Encode(_selectedRiskImgBytes!);
+    String supportImg = base64Encode(_selectedSupImgBytes!);
+    Map<String, dynamic> plansList = {
+      "job_id": jobId,
+      "risk_plans_img": riskImg,
+      "support_plans_img": supportImg,
+    };
+    await dbhandler.child("Risk Support Plans").push().set(plansList);
+    _riskImgBytes = null;
+    _supImgBytes = null;
+  }
 
-  Future<void> addRiskSupportPlans(BuildContext context) async {
+  // Future<void> addRiskSupportPlans(BuildContext context, String jobId) async {
+  //   return showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Has the job been completed?'),
+  //         content: Column(
+  //           children: [
+  //             const DisplayText(
+  //               text: 'Please select plans to add',
+  //               fontSize: 20,
+  //               colour: Colors.black,
+  //             ),
+  //             const SizedBox(height: 5),
+  //             PushButton(
+  //               buttonSize: 50,
+  //               text: "Risk Assessment",
+  //               onPress: () {
+  //                 _submitPicture(context, _riskImgBytes,
+  //                     jobId); // Call _submitPicture when button is pressed
+  //               },
+  //             ),
+  //             const SizedBox(height: 5),
+  //             PushButton(
+  //               buttonSize: 50,
+  //               text: "Support Plans",
+  //               onPress: () {
+  //                 _submitPicture(context, _supImgBytes,
+  //                     jobId); // Call _submitPicture when button is pressed
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               _riskImgBytes = null;
+  //               _supImgBytes = null;
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: const Text('Back'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               setState(() {
+  //                 // TO DO: add risk support plans to database
+  //                 if (_riskImgBytes != null && _supImgBytes != null) {
+  //                   addRiskSupportDb(jobId);
+  //                 }
+  //               });
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: const Text('Submit'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
+  // Future<void> _pickImage(BuildContext context, Uint8List? _imageBytes) async {
+  //   final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  //   if (pickedFile != null) {
+  //     final bytes = await pickedFile.readAsBytes();
+  //     setState(() {
+  //       _imageBytes = Uint8List.fromList(bytes);
+  //     });
+  //   }
+  // }
+
+  // Future<void> _submitPicture(
+  //     BuildContext context, Uint8List? _imageBytes, String jobId) async {
+  //   if (_imageBytes == null) {
+  //     await _pickImage(context, _imageBytes);
+  //   }
+  //   return showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Submit Picture'),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: <Widget>[
+  //             _imageBytes == null
+  //                 ? const Text('No image selected.')
+  //                 : Image.memory(_imageBytes!),
+  //             const SizedBox(height: 20),
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 TextButton(
+  //                   onPressed: () {
+  //                     setState(() {
+  //                       _imageBytes = null;
+  //                     });
+  //                     Navigator.of(context).pop();
+  //                     _submitPicture(
+  //                         context, _imageBytes, jobId); // Reselect image
+  //                   },
+  //                   child: const Text('Reselect'),
+  //                 ),
+  //                 TextButton(
+  //                   onPressed: () {
+  //                     Navigator.of(context).pop();
+  //                     addRiskSupportPlans(
+  //                         context, jobId); // Proceed to addRiskSupportPlans
+  //                   },
+  //                   child: const Text('Submit'),
+  //                 ),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  Uint8List? _selectedRiskImgBytes;
+  Uint8List? _selectedSupImgBytes;
+
+  Future<void> addRiskSupportPlans(BuildContext context, String jobId) async {
     return showDialog(
       context: context,
+      barrierDismissible:
+          false, // Prevent dismissing the dialog when clicking outside
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Has the job been completed?'),
           content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const DisplayText(
                 text: 'Please select plans to add',
                 fontSize: 20,
                 colour: Colors.black,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 5),
               PushButton(
                 buttonSize: 50,
                 text: "Risk Assessment",
                 onPress: () {
-                  _submitPicture(
-                      context); // Call _submitPicture when button is pressed
+                  _submitPicture(context, isRisk: true);
                 },
               ),
-              // TO DO: ADD BUTTONS TO ADD PICS
+              const SizedBox(height: 5),
+              PushButton(
+                buttonSize: 50,
+                text: "Support Plans",
+                onPress: () {
+                  _submitPicture(context, isRisk: false);
+                },
+              ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
+                setState(() {
+                  _selectedRiskImgBytes = null;
+                  _selectedSupImgBytes = null;
+                });
                 Navigator.of(context).pop();
               },
               child: const Text('Back'),
@@ -277,7 +425,10 @@ class CompanyJobState extends State<CompanyJob> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  // TO DO: add risk support plans to database
+                  if (_selectedRiskImgBytes != null &&
+                      _selectedSupImgBytes != null) {
+                    addRiskSupportDb(jobId);
+                  }
                 });
                 Navigator.of(context).pop();
               },
@@ -289,51 +440,58 @@ class CompanyJobState extends State<CompanyJob> {
     );
   }
 
-  Future<void> _pickImage(BuildContext context) async {
+  Future<void> _pickImage(BuildContext context, {required bool isRisk}) async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
-      setState(() {
-        _imageBytes = Uint8List.fromList(bytes);
-      });
+      if (isRisk) {
+        _selectedRiskImgBytes = Uint8List.fromList(bytes);
+      } else {
+        _selectedSupImgBytes = Uint8List.fromList(bytes);
+      }
+      Navigator.of(context).pop(); // Close the current dialog
+      // Show the dialog again after selecting an image
+      _submitPicture(context, isRisk: isRisk);
     }
   }
 
-  Future<void> _submitPicture(BuildContext context) async {
-    if (_imageBytes == null) {
-      await _pickImage(context);
-    }
+  Future<void> _submitPicture(BuildContext context,
+      {required bool isRisk}) async {
     return showDialog(
       context: context,
+      barrierDismissible:
+          false, // Prevent dismissing the dialog when clicking outside
       builder: (BuildContext context) {
+        Uint8List? imageBytes;
+        if (isRisk) {
+          imageBytes = _selectedRiskImgBytes;
+        } else {
+          imageBytes = _selectedSupImgBytes;
+        }
+
         return AlertDialog(
           title: const Text('Submit Picture'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _imageBytes == null
+              imageBytes == null
                   ? const Text('No image selected.')
-                  : Image.memory(_imageBytes!),
+                  : Image.memory(imageBytes),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
                     onPressed: () {
-                      setState(() {
-                        _imageBytes = null;
-                      });
-                      Navigator.of(context).pop();
-                      _submitPicture(context); // Reselect image
+                      _pickImage(context,
+                          isRisk: isRisk); // Allow reselecting an image
                     },
                     child: const Text('Reselect'),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      addRiskSupportPlans(
-                          context); // Proceed to addRiskSupportPlans
                     },
                     child: const Text('Submit'),
                   ),
@@ -345,6 +503,8 @@ class CompanyJobState extends State<CompanyJob> {
       },
     );
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////
 
   Color pickColour(bool assigned, String workerId) {
     if (assigned) {
@@ -390,7 +550,7 @@ class CompanyJobState extends State<CompanyJob> {
     } else if (riskSupport == 'false' && assigned == true) {
       //_submitPicture(context);
       ////////////////////////////////////////////////////////////
-      addRiskSupportPlans(context);
+      addRiskSupportPlans(context, jobId);
       // TO DO: add risk support plans
       // TO DO: pop up to add plans
     } else {
