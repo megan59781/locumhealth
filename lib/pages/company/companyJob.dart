@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CompanyJob extends StatefulWidget {
   final String companyId;
@@ -16,6 +21,9 @@ class CompanyJob extends StatefulWidget {
 class CompanyJobState extends State<CompanyJob> {
   List<dynamic> jobList = [];
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
+  Uint8List? _riskImgBytes;
+  Uint8List? _supImgBytes;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -76,8 +84,12 @@ class CompanyJobState extends State<CompanyJob> {
             String riskSupport = value['risk_support_plans'];
 
             if (!completed) {
-              jobIdList.add(
-                  {"jobId": jobId, "workerId": workerId, "accepted": accepted, "riskSupport": riskSupport});
+              jobIdList.add({
+                "jobId": jobId,
+                "workerId": workerId,
+                "accepted": accepted,
+                "riskSupport": riskSupport
+              });
             }
           });
 
@@ -228,20 +240,31 @@ class CompanyJobState extends State<CompanyJob> {
     );
   }
 
-  Future<void> addRiskSupportPlans(BuildContext context, String jobId) async {
+  
+
+  Future<void> addRiskSupportPlans(BuildContext context) async {
     return showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Has the job been completed?'),
-          content: const Column(
+          content: Column(
             children: [
-              DisplayText(
-                text: 'Please select Yes to confirm the job completion or No if it has not.',
+              const DisplayText(
+                text: 'Please select plans to add',
                 fontSize: 20,
                 colour: Colors.black,
               ),
-              //TO DO: ADD BUTTONS TO ADD PICS
+              SizedBox(height: 20),
+              PushButton(
+                buttonSize: 50,
+                text: "Risk Assessment",
+                onPress: () {
+                  _submitPicture(
+                      context); // Call _submitPicture when button is pressed
+                },
+              ),
+              // TO DO: ADD BUTTONS TO ADD PICS
             ],
           ),
           actions: [
@@ -261,6 +284,63 @@ class CompanyJobState extends State<CompanyJob> {
               child: const Text('Submit'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(BuildContext context) async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      setState(() {
+        _imageBytes = Uint8List.fromList(bytes);
+      });
+    }
+  }
+
+  Future<void> _submitPicture(BuildContext context) async {
+    if (_imageBytes == null) {
+      await _pickImage(context);
+    }
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Submit Picture'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _imageBytes == null
+                  ? const Text('No image selected.')
+                  : Image.memory(_imageBytes!),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _imageBytes = null;
+                      });
+                      Navigator.of(context).pop();
+                      _submitPicture(context); // Reselect image
+                    },
+                    child: const Text('Reselect'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      addRiskSupportPlans(
+                          context); // Proceed to addRiskSupportPlans
+                    },
+                    child: const Text('Submit'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -308,6 +388,9 @@ class CompanyJobState extends State<CompanyJob> {
         jobConfirmation(context, jobId);
       });
     } else if (riskSupport == 'false' && assigned == true) {
+      //_submitPicture(context);
+      ////////////////////////////////////////////////////////////
+      addRiskSupportPlans(context);
       // TO DO: add risk support plans
       // TO DO: pop up to add plans
     } else {
@@ -340,8 +423,13 @@ class CompanyJobState extends State<CompanyJob> {
                     return InkWell(
                       onTap: () async {
                         setState(() {
-                          clicked(job['jobId'], job['assigned'],
-                              job['workerId'], job['date'], job['endTime'], job['riskSupport']);
+                          clicked(
+                              job['jobId'],
+                              job['assigned'],
+                              job['workerId'],
+                              job['date'],
+                              job['endTime'],
+                              job['riskSupport']);
                         });
                       },
                       child: Container(
