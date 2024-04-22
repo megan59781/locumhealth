@@ -314,7 +314,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
           "worker_job_complete": false,
           "company_job_complete": false,
           "worker_accepted": false,
-          "risk_support_plans": 'false',
+          "risk_support_plans": false,
         };
 
         try {

@@ -21,8 +21,10 @@ class CompanyJob extends StatefulWidget {
 class CompanyJobState extends State<CompanyJob> {
   List<dynamic> jobList = [];
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
-  Uint8List? _riskImgBytes;
-  Uint8List? _supImgBytes;
+  // Uint8List? _riskImgBytes;
+  // Uint8List? _supImgBytes;
+  Uint8List? riskImgBytes;
+  Uint8List? supImgBytes;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -81,7 +83,7 @@ class CompanyJobState extends State<CompanyJob> {
             String jobId = value['job_id'];
             String workerId = value['worker_id'];
             bool completed = value['company_job_complete'];
-            String riskSupport = value['risk_support_plans'];
+            bool riskSupport = value['risk_support_plans'];
 
             if (!completed) {
               jobIdList.add({
@@ -99,7 +101,7 @@ class CompanyJobState extends State<CompanyJob> {
             String jobId = job['jobId'];
             String workerId = job['workerId'];
             bool accepted = job['accepted'];
-            String riskSupport = job['riskSupport'];
+            bool riskSupport = job['riskSupport'];
 
             await dbhandler
                 .child('Jobs')
@@ -170,13 +172,9 @@ class CompanyJobState extends State<CompanyJob> {
             });
           }
 
-          setState(() {
-            getJobsList(jobDetailsList);
-          });
+          await getJobsList(jobDetailsList);
         } else {
-          setState(() {
-            getJobsList([]);
-          });
+          await getJobsList([]);
         }
       } else {
         //print("Data is not in the expected format");
@@ -201,6 +199,29 @@ class CompanyJobState extends State<CompanyJob> {
           var assignedJobKey = data.keys.first;
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
             "company_job_complete": true,
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> subitRiskSupport(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            "risk_support_plans": true,
           });
         }
       }
@@ -241,141 +262,17 @@ class CompanyJobState extends State<CompanyJob> {
   }
 
   Future<void> addRiskSupportDb(String jobId) async {
-    String riskImg = base64Encode(_selectedRiskImgBytes!);
-    String supportImg = base64Encode(_selectedSupImgBytes!);
+    String riskImg = base64Encode(riskImgBytes!);
+    String supportImg = base64Encode(supImgBytes!);
     Map<String, dynamic> plansList = {
       "job_id": jobId,
       "risk_plans_img": riskImg,
       "support_plans_img": supportImg,
     };
     await dbhandler.child("Risk Support Plans").push().set(plansList);
-    _riskImgBytes = null;
-    _supImgBytes = null;
+    riskImgBytes = null;
+    supImgBytes = null;
   }
-
-  // Future<void> addRiskSupportPlans(BuildContext context, String jobId) async {
-  //   return showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: const Text('Has the job been completed?'),
-  //         content: Column(
-  //           children: [
-  //             const DisplayText(
-  //               text: 'Please select plans to add',
-  //               fontSize: 20,
-  //               colour: Colors.black,
-  //             ),
-  //             const SizedBox(height: 5),
-  //             PushButton(
-  //               buttonSize: 50,
-  //               text: "Risk Assessment",
-  //               onPress: () {
-  //                 _submitPicture(context, _riskImgBytes,
-  //                     jobId); // Call _submitPicture when button is pressed
-  //               },
-  //             ),
-  //             const SizedBox(height: 5),
-  //             PushButton(
-  //               buttonSize: 50,
-  //               text: "Support Plans",
-  //               onPress: () {
-  //                 _submitPicture(context, _supImgBytes,
-  //                     jobId); // Call _submitPicture when button is pressed
-  //               },
-  //             ),
-  //           ],
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () {
-  //               _riskImgBytes = null;
-  //               _supImgBytes = null;
-  //               Navigator.of(context).pop();
-  //             },
-  //             child: const Text('Back'),
-  //           ),
-  //           TextButton(
-  //             onPressed: () {
-  //               setState(() {
-  //                 // TO DO: add risk support plans to database
-  //                 if (_riskImgBytes != null && _supImgBytes != null) {
-  //                   addRiskSupportDb(jobId);
-  //                 }
-  //               });
-  //               Navigator.of(context).pop();
-  //             },
-  //             child: const Text('Submit'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
-  // Future<void> _pickImage(BuildContext context, Uint8List? _imageBytes) async {
-  //   final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  //   if (pickedFile != null) {
-  //     final bytes = await pickedFile.readAsBytes();
-  //     setState(() {
-  //       _imageBytes = Uint8List.fromList(bytes);
-  //     });
-  //   }
-  // }
-
-  // Future<void> _submitPicture(
-  //     BuildContext context, Uint8List? _imageBytes, String jobId) async {
-  //   if (_imageBytes == null) {
-  //     await _pickImage(context, _imageBytes);
-  //   }
-  //   return showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: const Text('Submit Picture'),
-  //         content: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: <Widget>[
-  //             _imageBytes == null
-  //                 ? const Text('No image selected.')
-  //                 : Image.memory(_imageBytes!),
-  //             const SizedBox(height: 20),
-  //             Row(
-  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //               children: [
-  //                 TextButton(
-  //                   onPressed: () {
-  //                     setState(() {
-  //                       _imageBytes = null;
-  //                     });
-  //                     Navigator.of(context).pop();
-  //                     _submitPicture(
-  //                         context, _imageBytes, jobId); // Reselect image
-  //                   },
-  //                   child: const Text('Reselect'),
-  //                 ),
-  //                 TextButton(
-  //                   onPressed: () {
-  //                     Navigator.of(context).pop();
-  //                     addRiskSupportPlans(
-  //                         context, jobId); // Proceed to addRiskSupportPlans
-  //                   },
-  //                   child: const Text('Submit'),
-  //                 ),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
-  // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  Uint8List? _selectedRiskImgBytes;
-  Uint8List? _selectedSupImgBytes;
 
   Future<void> addRiskSupportPlans(BuildContext context, String jobId) async {
     return showDialog(
@@ -415,21 +312,24 @@ class CompanyJobState extends State<CompanyJob> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  _selectedRiskImgBytes = null;
-                  _selectedSupImgBytes = null;
+                  riskImgBytes = null;
+                  supImgBytes = null;
                 });
                 Navigator.of(context).pop();
               },
               child: const Text('Back'),
             ),
             TextButton(
-              onPressed: () {
-                setState(() {
-                  if (_selectedRiskImgBytes != null &&
-                      _selectedSupImgBytes != null) {
-                    addRiskSupportDb(jobId);
-                  }
-                });
+              onPressed: () async {
+                if (riskImgBytes != null && supImgBytes != null) {
+                  await addRiskSupportDb(jobId);
+                  await subitRiskSupport(jobId);
+                  // addRiskSupportDb(jobId);
+                  // subitRiskSupport(jobId);
+                } else {
+                  // TO DO: error message
+                }
+
                 Navigator.of(context).pop();
               },
               child: const Text('Submit'),
@@ -445,9 +345,9 @@ class CompanyJobState extends State<CompanyJob> {
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       if (isRisk) {
-        _selectedRiskImgBytes = Uint8List.fromList(bytes);
+        riskImgBytes = Uint8List.fromList(bytes);
       } else {
-        _selectedSupImgBytes = Uint8List.fromList(bytes);
+        supImgBytes = Uint8List.fromList(bytes);
       }
       Navigator.of(context).pop(); // Close the current dialog
       // Show the dialog again after selecting an image
@@ -464,9 +364,9 @@ class CompanyJobState extends State<CompanyJob> {
       builder: (BuildContext context) {
         Uint8List? imageBytes;
         if (isRisk) {
-          imageBytes = _selectedRiskImgBytes;
+          imageBytes = riskImgBytes;
         } else {
-          imageBytes = _selectedSupImgBytes;
+          imageBytes = supImgBytes;
         }
 
         return AlertDialog(
@@ -476,7 +376,8 @@ class CompanyJobState extends State<CompanyJob> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               imageBytes == null
-                  ? const Text('No image selected.')
+                  ? const Text(
+                      'No image selected, please click Reselect and pick an Image.')
                   : Image.memory(imageBytes),
               const SizedBox(height: 20),
               Row(
@@ -525,7 +426,7 @@ class CompanyJobState extends State<CompanyJob> {
   }
 
   void clicked(String jobId, bool assigned, String workerId, String dateString,
-      String endTime, String riskSupport) {
+      String endTime, bool riskSupport) {
     DateTime today = DateTime.now();
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
     TimeOfDay currentTime = TimeOfDay.now();
@@ -547,12 +448,9 @@ class CompanyJobState extends State<CompanyJob> {
       setState(() {
         jobConfirmation(context, jobId);
       });
-    } else if (riskSupport == 'false' && assigned == true) {
-      //_submitPicture(context);
-      ////////////////////////////////////////////////////////////
+    } else if (riskSupport == false && assigned == true) {
       addRiskSupportPlans(context, jobId);
-      // TO DO: add risk support plans
-      // TO DO: pop up to add plans
+      // TO DO: risk support update true
     } else {
       // TO DO: error message say waiting for worker to accept
     }
