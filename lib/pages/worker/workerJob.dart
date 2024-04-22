@@ -73,13 +73,14 @@ class WorkerJobState extends State<WorkerJob> {
             String companyId = value['company_id'];
             bool accepted = value['worker_accepted'];
             bool completed = value['worker_job_complete'];
-            //TO DO ADD RISK
+            bool riskSupport = value['risk_support_plans'];
 
             if (!completed) {
               jobIdList.add({
                 "jobId": jobId,
                 "companyId": companyId,
-                "accepted": accepted
+                "accepted": accepted,
+                "riskSupport": riskSupport,
               });
             }
           });
@@ -90,6 +91,7 @@ class WorkerJobState extends State<WorkerJob> {
             String jobId = job['jobId'];
             String companyId = job['companyId'];
             bool accepted = job['accepted'];
+            bool riskSupport = job['riskSupport'];
 
             await dbhandler
                 .child('Jobs')
@@ -135,6 +137,7 @@ class WorkerJobState extends State<WorkerJob> {
                             'endTime': jobEndTime,
                             'location': location,
                             "assigned": accepted,
+                            "riskSupport": riskSupport,
                           });
                         }
                       }
@@ -145,13 +148,9 @@ class WorkerJobState extends State<WorkerJob> {
             });
           }
 
-          setState(() {
-            getJobsList(jobDetailsList);
-          });
+          await getJobsList(jobDetailsList);
         } else {
-          setState(() {
-            getJobsList([]);
-          });
+          await getJobsList([]);
         }
       } else {
         print("Data is not in the expected format");
@@ -438,7 +437,8 @@ class WorkerJobState extends State<WorkerJob> {
     );
   }
 
-  void clicked(String jobId, bool assigned, String dateString, String endTime) {
+  void clicked(String jobId, bool assigned, String dateString, String endTime,
+      bool riskSupport) {
     DateTime today = DateTime.now();
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
     TimeOfDay currentTime = TimeOfDay.now();
@@ -450,9 +450,9 @@ class WorkerJobState extends State<WorkerJob> {
         today.isAfter(date)) {
       print("job over");
       jobConfirmation(context, jobId);
-    } else {
+    } else if (riskSupport) {
       showRiskSupportPlans(context, jobId);
-      //jobConfirmation(context, jobId);
+    } else {
       // TO DO: error message nothing to do
     }
   }
@@ -482,7 +482,7 @@ class WorkerJobState extends State<WorkerJob> {
                     return InkWell(
                       onTap: () async {
                         clicked(job['jobId'], job['assigned'], job['date'],
-                            job['endTime']);
+                            job['endTime'], job['riskSupport']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
