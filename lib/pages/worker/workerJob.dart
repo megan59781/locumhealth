@@ -320,8 +320,9 @@ class WorkerJobState extends State<WorkerJob> {
               child: const Text('No'),
             ),
             TextButton(
-              onPressed: () {
-                confirmJob(jobId);
+              onPressed: () async {
+                await confirmJob(jobId);
+                await deleteRiskSupport(jobId);
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
@@ -381,6 +382,25 @@ class WorkerJobState extends State<WorkerJob> {
         );
       },
     );
+  }
+
+  Future<void> deleteRiskSupport(String jobId) async {
+    await dbhandler
+        .child('Risk Support Plans')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .once()
+        .then((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          var rSKey = data.keys.first;
+          dbhandler.child('Risk Support Plans').child(rSKey).remove();
+        }
+      }
+    });
   }
 
   Future<List<Uint8List?>> getRiskSupport(String jobId) async {
