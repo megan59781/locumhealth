@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 
@@ -69,12 +73,14 @@ class WorkerJobState extends State<WorkerJob> {
             String companyId = value['company_id'];
             bool accepted = value['worker_accepted'];
             bool completed = value['worker_job_complete'];
+            bool riskSupport = value['risk_support_plans'];
 
             if (!completed) {
               jobIdList.add({
                 "jobId": jobId,
                 "companyId": companyId,
-                "accepted": accepted
+                "accepted": accepted,
+                "riskSupport": riskSupport,
               });
             }
           });
@@ -85,6 +91,7 @@ class WorkerJobState extends State<WorkerJob> {
             String jobId = job['jobId'];
             String companyId = job['companyId'];
             bool accepted = job['accepted'];
+            bool riskSupport = job['riskSupport'];
 
             await dbhandler
                 .child('Jobs')
@@ -130,6 +137,7 @@ class WorkerJobState extends State<WorkerJob> {
                             'endTime': jobEndTime,
                             'location': location,
                             "assigned": accepted,
+                            "riskSupport": riskSupport,
                           });
                         }
                       }
@@ -140,13 +148,9 @@ class WorkerJobState extends State<WorkerJob> {
             });
           }
 
-          setState(() {
-            getJobsList(jobDetailsList);
-          });
+          await getJobsList(jobDetailsList);
         } else {
-          setState(() {
-            getJobsList([]);
-          });
+          await getJobsList([]);
         }
       } else {
         print("Data is not in the expected format");
@@ -316,8 +320,9 @@ class WorkerJobState extends State<WorkerJob> {
               child: const Text('No'),
             ),
             TextButton(
-              onPressed: () {
-                confirmJob(jobId);
+              onPressed: () async {
+                await confirmJob(jobId);
+                await deleteRiskSupport(jobId);
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
@@ -335,7 +340,125 @@ class WorkerJobState extends State<WorkerJob> {
     return hours * 60 + minutes;
   }
 
-  void clicked(String jobId, bool assigned, String dateString, String endTime) {
+  Future<void> showRiskSupportPlans(BuildContext context, String jobId) async {
+    List<Uint8List?> imgBytes = await getRiskSupport(jobId);
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select the plan you want to view'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (imgBytes[0] != null)
+                PushButton(
+                  buttonSize: 50,
+                  text: "Risk Assessment",
+                  onPress: () {
+                    imageViewer(context, imgBytes[0]);
+                  },
+                ),
+              const SizedBox(height: 5),
+              if (imgBytes[1] != null)
+                PushButton(
+                  buttonSize: 50,
+                  text: "Support Plans",
+                  onPress: () {
+                    imageViewer(context, imgBytes[1]);
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> deleteRiskSupport(String jobId) async {
+    await dbhandler
+        .child('Risk Support Plans')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .once()
+        .then((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          var rSKey = data.keys.first;
+          dbhandler.child('Risk Support Plans').child(rSKey).remove();
+        }
+      }
+    });
+  }
+
+  Future<List<Uint8List?>> getRiskSupport(String jobId) async {
+    List<Uint8List?> result = [];
+
+    await dbhandler
+        .child('Risk Support Plans')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .first
+        .then((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          var rSKey = data.keys.first;
+          var rSData = data[rSKey];
+
+          Uint8List? riskImgBytes = base64Decode(rSData["risk_plans_img"]);
+          Uint8List? supImgBytes = base64Decode(rSData["support_plans_img"]);
+
+          result = [riskImgBytes, supImgBytes];
+        }
+      }
+    });
+
+    return result;
+  }
+
+  Future<void> imageViewer(BuildContext context, Uint8List? byteImg) async {
+    if (byteImg == null) return;
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Selected Plan'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [Image.memory(byteImg)],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void clicked(String jobId, bool assigned, String dateString, String endTime,
+      bool riskSupport) {
     DateTime today = DateTime.now();
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
     TimeOfDay currentTime = TimeOfDay.now();
@@ -347,8 +470,9 @@ class WorkerJobState extends State<WorkerJob> {
         today.isAfter(date)) {
       print("job over");
       jobConfirmation(context, jobId);
+    } else if (riskSupport) {
+      showRiskSupportPlans(context, jobId);
     } else {
-      //jobConfirmation(context, jobId);
       // TO DO: error message nothing to do
     }
   }
@@ -373,12 +497,12 @@ class WorkerJobState extends State<WorkerJob> {
                 child: ListView.builder(
                   itemCount: jobList.length,
                   itemBuilder: (context, index) {
-                    // Assuming each worker is represented as a Map 
+                    // Assuming each worker is represented as a Map
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
                         clicked(job['jobId'], job['assigned'], job['date'],
-                            job['endTime']);
+                            job['endTime'], job['riskSupport']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items

@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CompanyJob extends StatefulWidget {
   final String companyId;
@@ -16,6 +21,11 @@ class CompanyJob extends StatefulWidget {
 class CompanyJobState extends State<CompanyJob> {
   List<dynamic> jobList = [];
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
+  // Uint8List? _riskImgBytes;
+  // Uint8List? _supImgBytes;
+  Uint8List? riskImgBytes;
+  Uint8List? supImgBytes;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -73,10 +83,15 @@ class CompanyJobState extends State<CompanyJob> {
             String jobId = value['job_id'];
             String workerId = value['worker_id'];
             bool completed = value['company_job_complete'];
+            bool riskSupport = value['risk_support_plans'];
 
             if (!completed) {
-              jobIdList.add(
-                  {"jobId": jobId, "workerId": workerId, "accepted": accepted});
+              jobIdList.add({
+                "jobId": jobId,
+                "workerId": workerId,
+                "accepted": accepted,
+                "riskSupport": riskSupport
+              });
             }
           });
 
@@ -86,6 +101,7 @@ class CompanyJobState extends State<CompanyJob> {
             String jobId = job['jobId'];
             String workerId = job['workerId'];
             bool accepted = job['accepted'];
+            bool riskSupport = job['riskSupport'];
 
             await dbhandler
                 .child('Jobs')
@@ -117,7 +133,8 @@ class CompanyJobState extends State<CompanyJob> {
                       'endTime': jobEndTime,
                       'location': location,
                       'assigned': accepted,
-                      'workerId': workerId
+                      'workerId': workerId,
+                      'riskSupport': riskSupport
                     });
                   } else {
                     await dbhandler
@@ -143,7 +160,8 @@ class CompanyJobState extends State<CompanyJob> {
                             'endTime': jobEndTime,
                             'location': location,
                             'assigned': accepted,
-                            'workerId': workerId
+                            'workerId': workerId,
+                            'riskSupport': riskSupport
                           });
                         }
                       }
@@ -154,13 +172,9 @@ class CompanyJobState extends State<CompanyJob> {
             });
           }
 
-          setState(() {
-            getJobsList(jobDetailsList);
-          });
+          await getJobsList(jobDetailsList);
         } else {
-          setState(() {
-            getJobsList([]);
-          });
+          await getJobsList([]);
         }
       } else {
         //print("Data is not in the expected format");
@@ -185,6 +199,29 @@ class CompanyJobState extends State<CompanyJob> {
           var assignedJobKey = data.keys.first;
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
             "company_job_complete": true,
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> subitRiskSupport(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+            "risk_support_plans": true,
           });
         }
       }
@@ -224,6 +261,152 @@ class CompanyJobState extends State<CompanyJob> {
     );
   }
 
+  Future<void> addRiskSupportDb(String jobId) async {
+    String riskImg = base64Encode(riskImgBytes!);
+    String supportImg = base64Encode(supImgBytes!);
+    Map<String, dynamic> plansList = {
+      "job_id": jobId,
+      "risk_plans_img": riskImg,
+      "support_plans_img": supportImg,
+    };
+    await dbhandler.child("Risk Support Plans").push().set(plansList);
+    riskImgBytes = null;
+    supImgBytes = null;
+  }
+
+  Future<void> addRiskSupportPlans(BuildContext context, String jobId) async {
+    return showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevent dismissing the dialog when clicking outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Has the job been completed?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const DisplayText(
+                text: 'Please select plans to add',
+                fontSize: 20,
+                colour: Colors.black,
+              ),
+              const SizedBox(height: 5),
+              PushButton(
+                buttonSize: 50,
+                text: "Risk Assessment",
+                onPress: () {
+                  _submitPicture(context, isRisk: true);
+                },
+              ),
+              const SizedBox(height: 5),
+              PushButton(
+                buttonSize: 50,
+                text: "Support Plans",
+                onPress: () {
+                  _submitPicture(context, isRisk: false);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  riskImgBytes = null;
+                  supImgBytes = null;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (riskImgBytes != null && supImgBytes != null) {
+                  await addRiskSupportDb(jobId);
+                  await subitRiskSupport(jobId);
+                  // addRiskSupportDb(jobId);
+                  // subitRiskSupport(jobId);
+                } else {
+                  // TO DO: error message
+                }
+
+                Navigator.of(context).pop();
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(BuildContext context, {required bool isRisk}) async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      if (isRisk) {
+        riskImgBytes = Uint8List.fromList(bytes);
+      } else {
+        supImgBytes = Uint8List.fromList(bytes);
+      }
+      Navigator.of(context).pop(); // Close the current dialog
+      // Show the dialog again after selecting an image
+      _submitPicture(context, isRisk: isRisk);
+    }
+  }
+
+  Future<void> _submitPicture(BuildContext context,
+      {required bool isRisk}) async {
+    return showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevent dismissing the dialog when clicking outside
+      builder: (BuildContext context) {
+        Uint8List? imageBytes;
+        if (isRisk) {
+          imageBytes = riskImgBytes;
+        } else {
+          imageBytes = supImgBytes;
+        }
+
+        return AlertDialog(
+          title: const Text('Submit Picture'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              imageBytes == null
+                  ? const Text(
+                      'No image selected, please click Reselect and pick an Image.')
+                  : Image.memory(imageBytes),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      _pickImage(context,
+                          isRisk: isRisk); // Allow reselecting an image
+                    },
+                    child: const Text('Reselect'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Submit'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////
+
   Color pickColour(bool assigned, String workerId) {
     if (assigned) {
       return Colors.lightGreen[400]!;
@@ -243,7 +426,7 @@ class CompanyJobState extends State<CompanyJob> {
   }
 
   void clicked(String jobId, bool assigned, String workerId, String dateString,
-      String endTime) {
+      String endTime, bool riskSupport) {
     DateTime today = DateTime.now();
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
     TimeOfDay currentTime = TimeOfDay.now();
@@ -265,6 +448,9 @@ class CompanyJobState extends State<CompanyJob> {
       setState(() {
         jobConfirmation(context, jobId);
       });
+    } else if (riskSupport == false && assigned == true) {
+      addRiskSupportPlans(context, jobId);
+      // TO DO: risk support update true
     } else {
       // TO DO: error message say waiting for worker to accept
     }
@@ -295,8 +481,13 @@ class CompanyJobState extends State<CompanyJob> {
                     return InkWell(
                       onTap: () async {
                         setState(() {
-                          clicked(job['jobId'], job['assigned'],
-                              job['workerId'], job['date'], job['endTime']);
+                          clicked(
+                              job['jobId'],
+                              job['assigned'],
+                              job['workerId'],
+                              job['date'],
+                              job['endTime'],
+                              job['riskSupport']);
                         });
                       },
                       child: Container(
