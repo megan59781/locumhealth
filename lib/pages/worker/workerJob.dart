@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 
@@ -336,6 +340,104 @@ class WorkerJobState extends State<WorkerJob> {
     return hours * 60 + minutes;
   }
 
+  Future<void> showRiskSupportPlans(BuildContext context, String jobId) async {
+    List<Uint8List?> imgBytes = await getRiskSupport(jobId);
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select the plan you want to view'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (imgBytes[0] != null)
+                PushButton(
+                  buttonSize: 50,
+                  text: "Risk Assessment",
+                  onPress: () {
+                    imageViewer(context, imgBytes[0]);
+                  },
+                ),
+              const SizedBox(height: 5),
+              if (imgBytes[1] != null)
+                PushButton(
+                  buttonSize: 50,
+                  text: "Support Plans",
+                  onPress: () {
+                    imageViewer(context, imgBytes[1]);
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<List<Uint8List?>> getRiskSupport(String jobId) async {
+    List<Uint8List?> result = [];
+
+    await dbhandler
+        .child('Risk Support Plans')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .first
+        .then((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          var rSKey = data.keys.first;
+          var rSData = data[rSKey];
+
+          Uint8List? riskImgBytes = base64Decode(rSData["risk_plans_img"]);
+          Uint8List? supImgBytes = base64Decode(rSData["support_plans_img"]);
+
+          result = [riskImgBytes, supImgBytes];
+        }
+      }
+    });
+
+    return result;
+  }
+
+  Future<void> imageViewer(BuildContext context, Uint8List? byteImg) async {
+    if (byteImg == null) return;
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Selected Plan'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [Image.memory(byteImg)],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void clicked(String jobId, bool assigned, String dateString, String endTime) {
     DateTime today = DateTime.now();
     DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
@@ -349,6 +451,7 @@ class WorkerJobState extends State<WorkerJob> {
       print("job over");
       jobConfirmation(context, jobId);
     } else {
+      showRiskSupportPlans(context, jobId);
       //jobConfirmation(context, jobId);
       // TO DO: error message nothing to do
     }
@@ -374,7 +477,7 @@ class WorkerJobState extends State<WorkerJob> {
                 child: ListView.builder(
                   itemCount: jobList.length,
                   itemBuilder: (context, index) {
-                    // Assuming each worker is represented as a Map 
+                    // Assuming each worker is represented as a Map
                     Map<String, dynamic> job = jobList[index];
                     return InkWell(
                       onTap: () async {
