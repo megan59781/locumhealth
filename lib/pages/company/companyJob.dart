@@ -281,13 +281,13 @@ class CompanyJobState extends State<CompanyJob> {
           false, // Prevent dismissing the dialog when clicking outside
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Has the job been completed?'),
+          title: const Text('Upload Risk & Support Plans'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const DisplayText(
-                text: 'Please select plans to add',
-                fontSize: 20,
+                text: 'Click to submit the required plans',
+                fontSize: 16,
                 colour: Colors.black,
               ),
               const SizedBox(height: 5),
@@ -407,11 +407,12 @@ class CompanyJobState extends State<CompanyJob> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////
 
-  Color pickColour(bool assigned, String workerId) {
-    if (assigned) {
+  Color pickColour(bool assigned, String workerId, bool riskSupport) {
+    if (assigned && riskSupport == false) {
+      return Colors.yellow[400]!;
+    } else if (assigned) {
       return Colors.lightGreen[400]!;
-    }
-    if (workerId == "none") {
+    } else if (workerId == "none") {
       return Colors.pink[300]!;
     } else {
       return Colors.deepOrange[600]!;
@@ -495,7 +496,7 @@ class CompanyJobState extends State<CompanyJob> {
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
-                          color: pickColour(job['assigned'], job['workerId']),
+                          color: pickColour(job['assigned'], job['workerId'], job['riskSupport']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),
