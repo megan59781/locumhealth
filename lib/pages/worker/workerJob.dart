@@ -24,9 +24,11 @@ class WorkerJobState extends State<WorkerJob> {
   void initState() {
     super.initState();
     String workerId = widget.workerId;
-    getJobs(workerId, (List<dynamic> jobDetailList) {
-      setState(() {
-        jobList = jobDetailList;
+    setState(() {
+      getJobs(workerId, (List<dynamic> jobDetailList) {
+        setState(() {
+          jobList = jobDetailList;
+        });
       });
     });
   }
@@ -158,8 +160,10 @@ class WorkerJobState extends State<WorkerJob> {
     });
   }
 
-  Color pickColour(bool assigned) {
-    if (assigned) {
+  Color pickColour(bool assigned, bool riskSupport) {
+    if (assigned && riskSupport == false) {
+      return Colors.yellow[400]!;
+    } else if (assigned) {
       return Colors.lightGreen[400]!;
     } else {
       return Colors.deepOrange[400]!;
@@ -509,7 +513,8 @@ class WorkerJobState extends State<WorkerJob> {
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
-                          color: pickColour(job['assigned']),
+                          color:
+                              pickColour(job['assigned'], job['riskSupport']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),
