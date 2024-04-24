@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/profileView.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
@@ -134,6 +135,7 @@ class WorkerJobState extends State<WorkerJob> {
                           jobDetailsList.add({
                             'jobId': jobId,
                             'company': companyName,
+                            'companyId': companyId,
                             'date': date,
                             'startTime': jobStartTime,
                             'endTime': jobEndTime,
@@ -211,6 +213,53 @@ class WorkerJobState extends State<WorkerJob> {
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
             "worker_job_complete": true,
           });
+        }
+      }
+    });
+  }
+
+  Future<void> deleteJobDb(String jobId) async {
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          var assignedData = data[assignedJobKey];
+
+          bool company = assignedData['company_job_complete'];
+          bool worker = assignedData['company_job_complete'];
+
+          if (company && worker) {
+            dbhandler
+                .child("Risk Support Plans")
+                .orderByChild('job_id')
+                .equalTo(jobId)
+                .onValue
+                .take(1)
+                .listen((event) async {
+              if (event.snapshot.value != null) {
+                Map<dynamic, dynamic>? data =
+                    event.snapshot.value as Map<dynamic, dynamic>?;
+                if (data != null) {
+                  var riskSupportKey = data.keys.first;
+
+                  dbhandler
+                      .child('Risk Support Plans')
+                      .child(riskSupportKey)
+                      .remove();
+                }
+              }
+              dbhandler.child('Assigned Jobs').child(assignedJobKey).remove();
+            });
+          }
         }
       }
     });
@@ -438,7 +487,6 @@ class WorkerJobState extends State<WorkerJob> {
 
   Future<void> imageViewer(BuildContext context, Uint8List? byteImg) async {
     if (byteImg == null) return;
-
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -481,6 +529,56 @@ class WorkerJobState extends State<WorkerJob> {
     }
   }
 
+  Future<void> profileViewer(BuildContext context, String userId) async {
+    dbhandler
+        .child('Profiles')
+        .orderByChild('user_id')
+        .equalTo(userId)
+        .onValue
+        .first
+        .then((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var pKey = data.keys.first;
+          var pData = data[pKey];
+          String name = pData['name'];
+          String imgPath = pData['img'];
+          String description = pData['description'];
+
+          showDialog<void>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Company Profile"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ProfileView(
+                        name: name,
+                        imgPath: imgPath,
+                        experience: "",
+                        description: description,
+                        scale: 2)
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Back'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -507,6 +605,9 @@ class WorkerJobState extends State<WorkerJob> {
                       onTap: () async {
                         clicked(job['jobId'], job['assigned'], job['date'],
                             job['endTime'], job['riskSupport']);
+                      },
+                      onDoubleTap: () async {
+                        profileViewer(context, job['companyId']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items

@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/profileView.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
@@ -182,6 +183,70 @@ class CompanyJobState extends State<CompanyJob> {
     });
   }
 
+  Future<void> deleteJobDb(String jobId, bool notComplete) async {
+    dbhandler
+        .child('Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var jobKey = data.keys.first;
+          dbhandler.child('Jobs').child(jobKey).remove();
+        }
+      }
+    });
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          var assignedData = data[assignedJobKey];
+
+          bool company = assignedData['company_job_complete'];
+          bool worker = assignedData['company_job_complete'];
+
+          if (company && worker || notComplete) {
+            dbhandler
+                .child("Risk Support Plans")
+                .orderByChild('job_id')
+                .equalTo(jobId)
+                .onValue
+                .take(1)
+                .listen((event) async {
+              if (event.snapshot.value != null) {
+                Map<dynamic, dynamic>? data =
+                    event.snapshot.value as Map<dynamic, dynamic>?;
+                if (data != null) {
+                  var riskSupportKey = data.keys.first;
+
+                  dbhandler
+                      .child('Risk Support Plans')
+                      .child(riskSupportKey)
+                      .remove();
+                }
+              }
+            });
+            dbhandler.child('Assigned Jobs').child(assignedJobKey).remove();
+          }
+        }
+      }
+    });
+  }
+
   Future<void> confirmJob(String jobId) async {
     dbhandler
         .child('Assigned Jobs')
@@ -250,6 +315,7 @@ class CompanyJobState extends State<CompanyJob> {
               onPressed: () {
                 setState(() {
                   confirmJob(jobId);
+                  deleteJobDb(jobId, false);
                 });
                 Navigator.of(context).pop();
               },
@@ -452,9 +518,107 @@ class CompanyJobState extends State<CompanyJob> {
     } else if (riskSupport == false && assigned == true) {
       addRiskSupportPlans(context, jobId);
       // TO DO: risk support update true
+    } else if ((today.isAtSameMomentAs(date) &&
+            (stringTimeToMins(endTime) > ((8 * 60) + stringTimeToMins(now)))) ||
+        date.isAfter(today)) {
+      deleteJob(context, jobId);
     } else {
-      // TO DO: error message say waiting for worker to accept
+      // TO DO: error message
     }
+  }
+
+  void deleteJob(BuildContext context, String jobId) async {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Delete Job"),
+          contentPadding: EdgeInsets.zero,
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 5,
+              ),
+              DisplayText(
+                  text: "Are You Sure You Want To Delete This Job?",
+                  fontSize: 20,
+                  colour: Colors.black),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await deleteJobDb(jobId, true);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> profileViewer(BuildContext context, String userId) async {
+    dbhandler
+        .child('Profiles')
+        .orderByChild('user_id')
+        .equalTo(userId)
+        .onValue
+        .first
+        .then((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var pKey = data.keys.first;
+          var pData = data[pKey];
+          String name = pData['name'];
+          String imgPath = pData['img'];
+          int experience = pData['experience'];
+          String description = pData['description'];
+
+          showDialog<void>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Worker's Profile"),
+                contentPadding: EdgeInsets.zero,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      height: 5,
+                    ),
+                    ProfileView(
+                        name: name,
+                        imgPath: imgPath,
+                        experience: '$experience Years Experience',
+                        description: description,
+                        scale: 2)
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Back'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+    });
   }
 
   @override
@@ -491,12 +655,17 @@ class CompanyJobState extends State<CompanyJob> {
                               job['riskSupport']);
                         });
                       },
+                      onDoubleTap: () async {
+                        profileViewer(context,
+                            "AIhwMbH3ExbIWVzAITBTBk1GX813"); //job['workerId']);
+                      },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
-                          color: pickColour(job['assigned'], job['workerId'], job['riskSupport']),
+                          color: pickColour(job['assigned'], job['workerId'],
+                              job['riskSupport']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),

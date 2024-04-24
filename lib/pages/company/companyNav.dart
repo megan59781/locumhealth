@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp/pages/Company/CompanyJob.dart';
 import 'package:fyp/pages/Company/CompanySettings.dart';
 import 'package:fyp/pages/company/companyCreate.dart';
+import 'package:fyp/pages/company/companyProfile.dart';
 
 class CompanyNavigationBar extends StatefulWidget {
   final String companyId;
@@ -24,6 +25,7 @@ class CompanyNavigationBarState extends State<CompanyNavigationBar> {
   static List<Widget> _widgetOptions(String companyId) => [
         CompanyJob(companyId: companyId),
         CompanyCreateJob(companyId: companyId),
+        CompanyProfile(companyId: companyId),
         CompanySettings(companyId: companyId),
       ];
 
@@ -41,6 +43,7 @@ class CompanyNavigationBarState extends State<CompanyNavigationBar> {
         child: _widgetOptions(companyId)[_selectedIndex],
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.work_outline),
@@ -49,6 +52,10 @@ class CompanyNavigationBarState extends State<CompanyNavigationBar> {
           BottomNavigationBarItem(
             icon: Icon(Icons.add_business_outlined),
             label: 'Create Job',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),
