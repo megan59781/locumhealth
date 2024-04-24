@@ -67,7 +67,8 @@ class CompanyProfileState extends State<CompanyProfile> {
                   name: name,
                   imgPath: imgPath,
                   experience: "",
-                  description: description),
+                  description: description,
+                  scale: 1),
               const SizedBox(height: 40),
               const DisplayText(
                   text: "To edit the profile go to settings",

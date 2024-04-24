@@ -135,6 +135,7 @@ class WorkerJobState extends State<WorkerJob> {
                           jobDetailsList.add({
                             'jobId': jobId,
                             'company': companyName,
+                            'companyId': companyId,
                             'date': date,
                             'startTime': jobStartTime,
                             'endTime': jobEndTime,
@@ -481,7 +482,7 @@ class WorkerJobState extends State<WorkerJob> {
     }
   }
 
-  Future<void> profileView(BuildContext context, String userId) async {
+  Future<void> profileViewer(BuildContext context, String userId) async {
     dbhandler
         .child('Profiles')
         .orderByChild('user_id')
@@ -503,12 +504,17 @@ class WorkerJobState extends State<WorkerJob> {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: Text("Company Profile"),
-                content: ProfileView(
-                  name: name,
-                  imgPath: imgPath,
-                  experience: "",
-                  description: description,
+                title: const Text("Company Profile"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ProfileView(
+                        name: name,
+                        imgPath: imgPath,
+                        experience: "",
+                        description: description,
+                        scale: 2)
+                  ],
                 ),
                 actions: [
                   TextButton(
@@ -554,7 +560,7 @@ class WorkerJobState extends State<WorkerJob> {
                             job['endTime'], job['riskSupport']);
                       },
                       onDoubleTap: () async {
-                        profileView(context, job['companyId']);
+                        profileViewer(context, job['companyId']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items

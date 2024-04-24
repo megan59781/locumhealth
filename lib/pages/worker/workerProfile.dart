@@ -23,15 +23,15 @@ class WorkerProfileState extends State<WorkerProfile> {
   void initState() {
     super.initState();
     setState(() {
-      getProfile(widget.workerId);
+      getProfile();
     });
   }
 
-  void getProfile(String userId) async {
+  void getProfile() async {
     await dbhandler
         .child('Profiles')
         .orderByChild('user_id')
-        .equalTo(userId)
+        .equalTo(widget.workerId)
         .onValue
         .first
         .then((event) async {
@@ -42,7 +42,6 @@ class WorkerProfileState extends State<WorkerProfile> {
           var pKey = data.keys.first;
           var pData = data[pKey];
           setState(() {
-            userId = pData['user_id'];
             name = pData['name'];
             imgPath = pData['img'];
             experience = pData['experience'];
@@ -73,7 +72,8 @@ class WorkerProfileState extends State<WorkerProfile> {
                   name: name,
                   imgPath: imgPath,
                   experience: '$experience Years Experience',
-                  description: description),
+                  description: description,
+                  scale: 1,),
               const SizedBox(height: 40),
               const DisplayText(
                   text: "To edit your profile go to settings",

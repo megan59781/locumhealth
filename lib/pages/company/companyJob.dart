@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/profileView.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
@@ -32,7 +33,7 @@ class CompanyJobState extends State<CompanyJob> {
     super.initState();
     String companyId = widget.companyId;
 
-    setState(() { 
+    setState(() {
       getJobs(companyId, (List<dynamic> jobDetailList) {
         setState(() {
           jobList = jobDetailList;
@@ -457,6 +458,59 @@ class CompanyJobState extends State<CompanyJob> {
     }
   }
 
+  Future<void> profileViewer(BuildContext context, String userId) async {
+    dbhandler
+        .child('Profiles')
+        .orderByChild('user_id')
+        .equalTo(userId)
+        .onValue
+        .first
+        .then((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var pKey = data.keys.first;
+          var pData = data[pKey];
+          String name = pData['name'];
+          String imgPath = pData['img'];
+          int experience = pData['experience'];
+          String description = pData['description'];
+
+          showDialog<void>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Worker's Profile"),
+                contentPadding: EdgeInsets.zero,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 5,),
+                    ProfileView(
+                        name: name,
+                        imgPath: imgPath,
+                        experience: '$experience Years Experience',
+                        description: description,
+                        scale: 2)
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Back'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -491,12 +545,17 @@ class CompanyJobState extends State<CompanyJob> {
                               job['riskSupport']);
                         });
                       },
+                      onDoubleTap: () async {
+                        profileViewer(context,
+                            "AIhwMbH3ExbIWVzAITBTBk1GX813"); //job['workerId']);
+                      },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
                         padding:
                             const EdgeInsets.all(10), // space inside item box
                         decoration: BoxDecoration(
-                          color: pickColour(job['assigned'], job['workerId'], job['riskSupport']),
+                          color: pickColour(job['assigned'], job['workerId'],
+                              job['riskSupport']),
                           border: Border.all(color: Colors.deepPurple),
                           borderRadius: BorderRadius.circular(10),
                         ),
