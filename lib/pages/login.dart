@@ -128,9 +128,9 @@ class LoginState extends State<Login> {
   Future<void> addProfileDb(String userId, String name) async {
     Map<String, dynamic> profile = {
       "user_id": userId,
-      "img": "default",
+      "img": "general care",
       "name": name,
-      "experience": 0,
+      "experience": 1,
       "description": "No description",
     };
     await dbhandler.child("Profiles").push().set(profile);

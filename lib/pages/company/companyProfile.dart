@@ -3,27 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/profileView.dart';
 
-class WorkerProfile extends StatefulWidget {
-  final String workerId;
+class CompanyProfile extends StatefulWidget {
+  final String companyId;
 
-  const WorkerProfile({super.key, required this.workerId});
+  const CompanyProfile({super.key, required this.companyId});
 
   @override
-  State createState() => WorkerProfileState();
+  State createState() => CompanyProfileState();
 }
 
-class WorkerProfileState extends State<WorkerProfile> {
+class CompanyProfileState extends State<CompanyProfile> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
-  String name = " First Last Name ";
-  String imgPath = "default";
-  int experience = 0;
+  String name = "Company Name";
+  String imgPath = "general care";
   String description = "No Description";
 
   @override
   void initState() {
     super.initState();
     setState(() {
-      getProfile(widget.workerId);
+      getProfile(widget.companyId);
     });
   }
 
@@ -42,10 +41,8 @@ class WorkerProfileState extends State<WorkerProfile> {
           var pKey = data.keys.first;
           var pData = data[pKey];
           setState(() {
-            userId = pData['user_id'];
             name = pData['name'];
             imgPath = pData['img'];
-            experience = pData['experience'];
             description = pData['description'];
           });
         }
@@ -55,9 +52,6 @@ class WorkerProfileState extends State<WorkerProfile> {
 
   @override
   Widget build(BuildContext context) {
-    // setState(() {
-    //   getProfile(widget.workerId);
-    // });
     return Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
@@ -67,16 +61,16 @@ class WorkerProfileState extends State<WorkerProfile> {
                     children: [
               const SizedBox(height: 30),
               const DisplayText(
-                  text: "Your Profile", fontSize: 30, colour: Colors.black),
-                  const SizedBox(height: 40),
+                  text: "Company Profile", fontSize: 30, colour: Colors.black),
+              const SizedBox(height: 40),
               ProfileView(
                   name: name,
                   imgPath: imgPath,
-                  experience: '$experience Years Experience',
+                  experience: "",
                   description: description),
               const SizedBox(height: 40),
               const DisplayText(
-                  text: "To edit your profile go to settings",
+                  text: "To edit the profile go to settings",
                   fontSize: 20,
                   colour: Colors.deepPurple),
             ]))));
