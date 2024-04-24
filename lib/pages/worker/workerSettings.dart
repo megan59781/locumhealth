@@ -95,68 +95,66 @@ class WorkerSettingsState extends State<WorkerSettings> {
   }
 
   Future<void> genderChanger(BuildContext context, String value) async {
-    String dropdownValue =
-        value.toString(); // Initialize dropdown with the passed value
+  String dropdownValue = value;
 
-    // Dropdown items
-    List<String> dropdownItems = [
-      'default',
-      'male',
-      'female',
-      'non-Binary',
-    ];
+  // Dropdown items
+  List<String> dropdownItems = [
+    'default',
+    'male',
+    'female',
+    'non-binary',
+  ];
 
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Change Select Gender"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButton<String>(
-                value: dropdownValue,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    dropdownValue = newValue!;
-                  });
+  showDialog<void>(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          return AlertDialog(
+            title: const Text("Change Selected Gender"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButton<String>(
+                  value: dropdownValue,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      dropdownValue = newValue!;
+                    });
+                  },
+                  items: dropdownItems.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
                 },
-                items:
-                    dropdownItems.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                child: const Text('Back'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  // Call updateProfile function with the selected value
+                  await updateProfile("img", dropdownValue);
+
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Change'),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Back'),
-            ),
-            TextButton(
-              onPressed: () async {
-                // Set the selected value
-                setState(() {
-                  value = dropdownValue;
-                });
+          );
+        },
+      );
+    },
+  );
+}
 
-                // Call updateProfile function
-                await updateProfile("img", value);
-
-                Navigator.of(context).pop(value);
-              },
-              child: const Text('Change'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Future<void> profileChanger(
       BuildContext context, String title, String item, dynamic value) async {
