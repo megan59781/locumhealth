@@ -53,6 +53,7 @@ dependencies:
   fake_cloud_firestore: ^2.4.8
   google_sign_in_mocks: ^0.3.0
   image_picker: ^1.1.0
+  tuple: ^2.0.2
 
 dev_dependencies:
   flutter_test:

@@ -6,6 +6,7 @@ import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'package:tuple/tuple.dart';
 
 class CompanyWorkerList extends StatefulWidget {
   final String companyId;
@@ -222,7 +223,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                     print("megan this is a sucess");
                     print(matchedWorkerList);
 
-                    List<String> fullyMatchedWorkerList = [];
+                    List<Tuple2<String, int>> fullyMatchedWorkerList = [];
 
                     for (String workerId in matchedWorkerList) {
                       dbhandler
@@ -230,7 +231,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                           .orderByChild('worker_id')
                           .equalTo(workerId)
                           .onValue
-                          .listen((event) {
+                          .listen((event) async {
                         print(
                             'HERE ABILITIES Snapshot: ${event.snapshot.value}');
                         if (event.snapshot.value != null) {
@@ -258,12 +259,21 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                             }
 
                             if (allAbilitiesPresent) {
-                              fullyMatchedWorkerList.add(workerId);
+                              int jobCount = await workerJobCount(workerId);
+                              fullyMatchedWorkerList
+                                  .add(Tuple2(workerId, jobCount));
                             }
                           }
                         }
-                        print("megan this is a sucess");
-                        getList(fullyMatchedWorkerList);
+                        // sort the list by job count
+                        fullyMatchedWorkerList
+                            .sort((a, b) => a.item2.compareTo(b.item2));
+                        //print(fullyMatchedWorkerLis);
+                        List<String> orderedWorkers = fullyMatchedWorkerList
+                            .map((tuple) => tuple.item1)
+                            .toList();
+                        getList(orderedWorkers);
+                        print(orderedWorkers);
                       });
                     }
                   });
@@ -282,6 +292,25 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         print("MEGAN IT fails: No data found for Job ID: $jobId");
       }
     });
+  }
+
+  Future<int> workerJobCount(String workerId) async {
+    int count = 0;
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .listen((DatabaseEvent event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          count = data.length;
+        }
+      }
+    });
+    return count;
   }
 
   Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
@@ -326,28 +355,6 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
       }
     });
   }
-
-  // Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
-  //     BuildContext context) async {
-  //   String assignId = const Uuid().v4();
-
-  //   Map<String, dynamic> assignJob = {
-  //     "assign_job_id": assignId,
-  //     "job_id": jobId,
-  //     "company_id": companyId,
-  //     "worker_id": workerId,
-  //     "worker_job_complete": false,
-  //     "company_job_complete": false,
-  //     "worker_accepted": false,
-  //   };
-
-  //   try {
-  //     await dbhandler.child("Assigned Jobs").push().set(assignJob);
-  //     //Navigator.of(context).pop();
-  //   } catch (error) {
-  //     print("Error saving to Firebase: $error");
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
