@@ -78,7 +78,7 @@ class WorkerProfileState extends State<WorkerProfile> {
               const DisplayText(
                   text: "To edit your profile go to settings",
                   fontSize: 20,
-                  colour: Colors.black),
+                  colour: Colors.deepPurple),
             ]))));
   }
 }

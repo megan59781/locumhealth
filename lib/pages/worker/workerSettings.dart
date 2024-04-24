@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/pages/login.dart';
+import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -37,9 +38,32 @@ class WorkerSettingsState extends State<WorkerSettings> {
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
+              const DisplayText(
+                  text: "Settings", fontSize: 30, colour: Colors.black),
+              const SizedBox(height: 40),
               PushButton(
-                  buttonSize: 60, text: "Sign Out", onPress: () => signOut()),
+                  buttonSize: 70, text: "Change Name", onPress: () => null),
+              const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 70, text: "Change Gender", onPress: () => null),
+              const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 70,
+                  text: "Change Expeience",
+                  onPress: () => null),
+              const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 70,
+                  text: "Change Description",
+                  onPress: () => null),
+              const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 70, text: "Delete Account", onPress: () => null),
+              const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
+              const SizedBox(height: 20),
             ]))));
   }
 }
