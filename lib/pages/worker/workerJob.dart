@@ -438,7 +438,6 @@ class WorkerJobState extends State<WorkerJob> {
 
   Future<void> imageViewer(BuildContext context, Uint8List? byteImg) async {
     if (byteImg == null) return;
-
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
