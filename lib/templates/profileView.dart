@@ -33,7 +33,7 @@ class ProfileView extends StatelessWidget {
         Container(
             height: 200,
             width: 350,
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
+            padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 10.0),
             decoration: BoxDecoration(
                 border: Border.all(color: Colors.black, width: 2)),
             child: DisplayText(

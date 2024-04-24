@@ -44,8 +44,8 @@ class WorkerSettingsState extends State<WorkerSettings> {
     });
   }
 
-  void getProfile(String userId) async {
-    await dbhandler
+  Future<void> getProfile(String userId) async {
+    dbhandler
         .child('Profiles')
         .orderByChild('user_id')
         .equalTo(userId)
@@ -94,6 +94,70 @@ class WorkerSettingsState extends State<WorkerSettings> {
     });
   }
 
+  Future<void> genderChanger(BuildContext context, String value) async {
+    String dropdownValue =
+        value.toString(); // Initialize dropdown with the passed value
+
+    // Dropdown items
+    List<String> dropdownItems = [
+      'default',
+      'male',
+      'female',
+      'non-Binary',
+    ];
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Change Select Gender"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                value: dropdownValue,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    dropdownValue = newValue!;
+                  });
+                },
+                items:
+                    dropdownItems.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Set the selected value
+                setState(() {
+                  value = dropdownValue;
+                });
+
+                // Call updateProfile function
+                await updateProfile("img", value);
+
+                Navigator.of(context).pop(value);
+              },
+              child: const Text('Change'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> profileChanger(
       BuildContext context, String title, String item, dynamic value) async {
     showDialog<void>(
@@ -116,9 +180,15 @@ class WorkerSettingsState extends State<WorkerSettings> {
             ),
             TextButton(
               onPressed: () async {
-                await updateProfile(item, textController.text);
+                setState(() {
+                  value = textController.text;
+                });
+                if (item == "experience") {
+                  value = int.parse(value);
+                }
+                await updateProfile(item, value);
                 textController.clear();
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(value);
               },
               child: const Text('Change'),
             ),
@@ -151,13 +221,13 @@ class WorkerSettingsState extends State<WorkerSettings> {
                   buttonSize: 70,
                   text: "Change Gender", ///////////////////// TO DO
                   onPress: () =>
-                      profileChanger(context, "Gender", 'img', null)),
+                      genderChanger(context, imgPath)), //////////////// TO DO
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70,
                   text: "Change Expeience",
                   onPress: () => profileChanger(context, "Years of Experience",
-                      "experience", experience)),
+                      "experience", experience.toString())),
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70,
