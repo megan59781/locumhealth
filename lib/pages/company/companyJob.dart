@@ -183,6 +183,93 @@ class CompanyJobState extends State<CompanyJob> {
     });
   }
 
+  Future<void> deleteJobDb(String jobId, bool notComplete) async {
+    dbhandler
+        .child('Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var jobKey = data.keys.first;
+          dbhandler.child('Jobs').child(jobKey).remove();
+        }
+      }
+    });
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var assignedJobKey = data.keys.first;
+          var assignedData = data[assignedJobKey];
+
+          bool company = assignedData['company_job_complete'];
+          bool worker = assignedData['company_job_complete'];
+
+          if (company && worker) {
+            dbhandler
+                .child("Risk Support Plans")
+                .orderByChild('job_id')
+                .equalTo(jobId)
+                .onValue
+                .take(1)
+                .listen((event) async {
+              if (event.snapshot.value != null) {
+                Map<dynamic, dynamic>? data =
+                    event.snapshot.value as Map<dynamic, dynamic>?;
+                if (data != null) {
+                  var riskSupportKey = data.keys.first;
+
+                  dbhandler
+                      .child('Risk Support Plans')
+                      .child(riskSupportKey)
+                      .remove();
+                }
+              }
+            });
+          }
+
+          dbhandler.child('Assigned Jobs').child(assignedJobKey).remove();
+        }
+      }
+    });
+    if (notComplete) {
+      dbhandler
+          .child("Risk Support Plans")
+          .orderByChild('job_id')
+          .equalTo(jobId)
+          .onValue
+          .take(1)
+          .listen((event) async {
+        if (event.snapshot.value != null) {
+          Map<dynamic, dynamic>? data =
+              event.snapshot.value as Map<dynamic, dynamic>?;
+          if (data != null) {
+            var riskSupportKey = data.keys.first;
+
+            dbhandler
+                .child('Risk Support Plans')
+                .child(riskSupportKey)
+                .remove();
+          }
+        }
+      });
+    }
+  }
+
   Future<void> confirmJob(String jobId) async {
     dbhandler
         .child('Assigned Jobs')
@@ -251,6 +338,7 @@ class CompanyJobState extends State<CompanyJob> {
               onPressed: () {
                 setState(() {
                   confirmJob(jobId);
+                  deleteJobDb(jobId, false);
                 });
                 Navigator.of(context).pop();
               },
@@ -453,9 +541,52 @@ class CompanyJobState extends State<CompanyJob> {
     } else if (riskSupport == false && assigned == true) {
       addRiskSupportPlans(context, jobId);
       // TO DO: risk support update true
+    } else if ((today.isAtSameMomentAs(date) &&
+            (stringTimeToMins(endTime) > ((8 * 60) + stringTimeToMins(now)))) ||
+        date.isAfter(today)) {
+      deleteJob(context, jobId);
     } else {
-      // TO DO: error message say waiting for worker to accept
+      // TO DO: error message
     }
+  }
+
+  void deleteJob(BuildContext context, String jobId) async {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Delete Job"),
+          contentPadding: EdgeInsets.zero,
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 5,
+              ),
+              DisplayText(
+                  text: "Are You Sure You Want To Delete This Job?",
+                  fontSize: 20,
+                  colour: Colors.black),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Back'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await deleteJobDb(jobId, true);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> profileViewer(BuildContext context, String userId) async {
@@ -486,7 +617,9 @@ class CompanyJobState extends State<CompanyJob> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 5,),
+                    const SizedBox(
+                      height: 5,
+                    ),
                     ProfileView(
                         name: name,
                         imgPath: imgPath,
