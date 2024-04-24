@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp/pages/worker/workerAbility.dart';
 import 'package:fyp/pages/worker/workerJob.dart';
 import 'package:fyp/pages/worker/workerPref.dart';
+import 'package:fyp/pages/worker/workerProfile.dart';
 import 'package:fyp/pages/worker/workerSettings.dart';
 
 // Define WorkerNavigationBar widget
@@ -35,6 +36,7 @@ class WorkerNavigationBarState extends State<WorkerNavigationBar> {
         WorkerJob(workerId: workerId),
         WorkerPreference(workerId: workerId),
         WorkerAbility(workerId: workerId),
+        WorkerProfile(workerId: workerId),
         WorkerSettings(workerId: workerId),
       ];
 
@@ -67,6 +69,10 @@ class WorkerNavigationBarState extends State<WorkerNavigationBar> {
           BottomNavigationBarItem(
             icon: Icon(Icons.verified_outlined),
             label: 'Abilities',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),

@@ -64,10 +64,11 @@ class LoginState extends State<Login> {
       //print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
         DateTime? bday = await _dateSelector(context);
+        String name = user.displayName.toString();
         List<double> location = await getCurrentLatLong();
         Map<String, dynamic> worker = {
           "worker_id": user.uid,
-          "name": user.displayName.toString(),
+          "name": name,
           "email": user.email.toString(),
           "bday": bday.toIso8601String(),
           "latitude": location[0],
@@ -75,6 +76,7 @@ class LoginState extends State<Login> {
           "miles": 1,
         };
         dbhandler.child("Worker").push().set(worker).then((value) async {
+          await addProfileDb(user.uid, name);
           await Future.delayed(const Duration(seconds: 5));
         }).catchError((error) {
           //print("Error saving to Firebase: $error");
@@ -108,8 +110,9 @@ class LoginState extends State<Login> {
           "name": name,
           "email": user.email.toString(),
         };
-        dbhandler.child("Company").push().set(company).then((value) {
+        dbhandler.child("Company").push().set(company).then((value) async {
           print("works company");
+          await addProfileDb(user.uid, name);
           //Navigator.of(context).pop();
         }).catchError((error) {
           print("Error saving to Firebase: $error");
@@ -120,6 +123,17 @@ class LoginState extends State<Login> {
         context,
         MaterialPageRoute(
             builder: (context) => CompanyNavigationBar(companyId: user.uid)));
+  }
+
+  Future<void> addProfileDb(String userId, String name) async {
+    Map<String, dynamic> profile = {
+      "user_id": userId,
+      "img": "default",
+      "name": name,
+      "experience": 0,
+      "description": "No description",
+    };
+    await dbhandler.child("Profiles").push().set(profile);
   }
 
   /// Verifies the Google account and returns the user information if valid.
