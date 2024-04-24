@@ -66,6 +66,10 @@ class WorkerNavigationBarState extends State<WorkerNavigationBar> {
             icon: Icon(Icons.check_box_outlined),
             label: 'Preferences',
           ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.calendar_month_outlined),
+          //   label: 'Availability',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.verified_outlined),
             label: 'Abilities',

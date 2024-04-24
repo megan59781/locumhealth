@@ -223,7 +223,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70,
-                  text: "Change Expeience",
+                  text: "Change Experience",
                   onPress: () => profileChanger(context, "Years of Experience",
                       "experience", experience.toString())),
               const SizedBox(height: 20),
@@ -233,9 +233,9 @@ class WorkerSettingsState extends State<WorkerSettings> {
                   onPress: () => profileChanger(context, "About you summary",
                       "description", description)),
               const SizedBox(height: 20),
-              // PushButton(
-              //     buttonSize: 70, text: "Delete Account", onPress: () => null),
-              // const SizedBox(height: 20),
+              PushButton(
+                  buttonSize: 70, text: "Delete Account", onPress: () => null),
+              const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
               const SizedBox(height: 20),

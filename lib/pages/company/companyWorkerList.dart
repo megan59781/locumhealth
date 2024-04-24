@@ -193,7 +193,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                       .orderByChild('worker_id')
                       .equalTo(workerId)
                       .onValue
-                      .listen((event) {
+                      .listen((event) async {
                     print(
                         'Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
                     if (event.snapshot.value != null) {
@@ -220,61 +220,72 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                         }
                       }
                     }
-                    print("megan this is a sucess");
+                    print("HERE MATCHED");
                     print(matchedWorkerList);
 
                     List<Tuple2<String, int>> fullyMatchedWorkerList = [];
 
                     for (String workerId in matchedWorkerList) {
-                      dbhandler
-                          .child('Ability')
-                          .orderByChild('worker_id')
-                          .equalTo(workerId)
-                          .onValue
-                          .listen((event) async {
-                        print(
-                            'HERE ABILITIES Snapshot: ${event.snapshot.value}');
-                        if (event.snapshot.value != null) {
-                          Map<dynamic, dynamic>? data =
-                              event.snapshot.value as Map<dynamic, dynamic>?;
-                          if (data != null) {
-                            List<String> workerAbilities = [];
-                            // Assuming there is only one entry, you can access it directly
-                            var abilityKey = data.keys.first;
-                            var abilityData = data[abilityKey];
-                            abilityData.forEach((key, value) {
-                              if (key != 'worker_id') {
-                                workerAbilities.add(key);
-                              }
-                            });
-                            print("HERE LIST: $workerAbilities");
+                      print("HERE HERE WORKER ID: $workerId");
+                      if (widget.abilityList.isEmpty) {
+                        int jobCount = await workerJobCount(workerId);
+                        fullyMatchedWorkerList.add(Tuple2(workerId, jobCount));
+                        print("HERE in here");
+                        print(fullyMatchedWorkerList);
+                      } else {
+                        dbhandler
+                            .child('Ability')
+                            .orderByChild('worker_id')
+                            .equalTo(workerId)
+                            .onValue
+                            .listen((event) async {
+                          print(
+                              'HERE ABILITIES Snapshot: ${event.snapshot.value}');
+                          if (event.snapshot.value != null) {
+                            Map<dynamic, dynamic>? data =
+                                event.snapshot.value as Map<dynamic, dynamic>?;
+                            if (data != null) {
+                              List<String> workerAbilities = [];
+                              // Assuming there is only one entry, you can access it directly
+                              var abilityKey = data.keys.first;
+                              var abilityData = data[abilityKey];
+                              abilityData.forEach((key, value) {
+                                if (key != 'worker_id') {
+                                  workerAbilities.add(key);
+                                }
+                              });
+                              print("HERE LIST: $workerAbilities");
 
-                            // Check if all abilities are present
-                            bool allAbilitiesPresent = true;
-                            for (String ability in widget.abilityList) {
-                              if (!workerAbilities.contains(ability)) {
-                                allAbilitiesPresent = false;
-                                break;
+                              // Check if all abilities are present
+                              bool allAbilitiesPresent = true;
+                              for (String ability in widget.abilityList) {
+                                if (!workerAbilities.contains(ability)) {
+                                  allAbilitiesPresent = false;
+                                  break;
+                                }
                               }
-                            }
 
-                            if (allAbilitiesPresent) {
-                              int jobCount = await workerJobCount(workerId);
-                              fullyMatchedWorkerList
-                                  .add(Tuple2(workerId, jobCount));
+                              if (allAbilitiesPresent) {
+                                int jobCount = await workerJobCount(workerId);
+                                fullyMatchedWorkerList
+                                    .add(Tuple2(workerId, jobCount));
+                              }
                             }
                           }
-                        }
-                        // sort the list by job count
-                        fullyMatchedWorkerList
-                            .sort((a, b) => a.item2.compareTo(b.item2));
-                        //print(fullyMatchedWorkerLis);
-                        List<String> orderedWorkers = fullyMatchedWorkerList
-                            .map((tuple) => tuple.item1)
-                            .toList();
+                        });
+                      }
+                      // sort the list by job count
+                      fullyMatchedWorkerList
+                          .sort((a, b) => a.item2.compareTo(b.item2));
+                      //print(fullyMatchedWorkerLis);
+                      List<String> orderedWorkers = fullyMatchedWorkerList
+                          .map((tuple) => tuple.item1)
+                          .toList();
+                      setState(() {
                         getList(orderedWorkers);
-                        print(orderedWorkers);
                       });
+                      print("workers");
+                      print(orderedWorkers);
                     }
                   });
                 }
@@ -306,7 +317,11 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
         if (data != null) {
-          count = data.length;
+          data.forEach((key, value) {
+            if (value['worker_job_complete'] == false) {
+              count++;
+            }
+          });
         }
       }
     });
@@ -366,7 +381,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const DisplayText(
-                  text: "List of Availiable Workers",
+                  text: "List of Available Workers",
                   fontSize: 30,
                   colour: Colors.black),
               const SizedBox(height: 10),
