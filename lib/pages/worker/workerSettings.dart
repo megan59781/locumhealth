@@ -70,22 +70,26 @@ class WorkerSettingsState extends State<WorkerSettings> {
   }
 
   Future<void> updateProfile(String item, dynamic value) async {
-    await dbhandler
+    dbhandler
         .child('Profiles')
         .orderByChild('user_id')
         .equalTo(widget.workerId)
         .onValue
-        .first
-        .then((event) async {
+        .take(1)
+        .listen((event) async {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
+        print("profile works here");
         if (data != null) {
           var profileKey = data.keys.first;
-          dbhandler.child('Profiles').child(profileKey).update({
+          await dbhandler.child('Profiles').child(profileKey).update({
             item: value,
           });
+          print("profile works here");
         }
+      } else {
+        print("No Profile Found");
       }
     });
   }
@@ -96,12 +100,8 @@ class WorkerSettingsState extends State<WorkerSettings> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Enter Location'),
+          title: Text("Change $title"),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            DisplayText(
-                text: 'Current $title: $value',
-                fontSize: 20,
-                colour: Colors.black),
             TextField(
               controller: textController,
               decoration: InputDecoration(labelText: value),
@@ -116,7 +116,9 @@ class WorkerSettingsState extends State<WorkerSettings> {
             ),
             TextButton(
               onPressed: () async {
-                await updateProfile(item, value);
+                await updateProfile(item, textController.text);
+                textController.clear();
+                Navigator.of(context).pop();
               },
               child: const Text('Change'),
             ),
@@ -140,20 +142,28 @@ class WorkerSettingsState extends State<WorkerSettings> {
                   text: "Settings", fontSize: 30, colour: Colors.black),
               const SizedBox(height: 40),
               PushButton(
-                  buttonSize: 70, text: "Change Name", onPress: () => null),
+                  buttonSize: 70,
+                  text: "Change Name",
+                  onPress: () =>
+                      profileChanger(context, "Profile Name", "name", name)),
               const SizedBox(height: 20),
               PushButton(
-                  buttonSize: 70, text: "Change Gender", onPress: () => null),
+                  buttonSize: 70,
+                  text: "Change Gender", ///////////////////// TO DO
+                  onPress: () =>
+                      profileChanger(context, "Gender", 'img', null)),
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70,
                   text: "Change Expeience",
-                  onPress: () => null),
+                  onPress: () => profileChanger(context, "Years of Experience",
+                      "experience", experience)),
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70,
                   text: "Change Description",
-                  onPress: () => null),
+                  onPress: () => profileChanger(context, "About you summary",
+                      "description", description)),
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70, text: "Delete Account", onPress: () => null),
