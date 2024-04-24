@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/profileView.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
@@ -480,6 +481,51 @@ class WorkerJobState extends State<WorkerJob> {
     }
   }
 
+  Future<void> profileView(BuildContext context, String userId) async {
+    dbhandler
+        .child('Profiles')
+        .orderByChild('user_id')
+        .equalTo(userId)
+        .onValue
+        .first
+        .then((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var pKey = data.keys.first;
+          var pData = data[pKey];
+          String name = pData['name'];
+          String imgPath = pData['img'];
+          String description = pData['description'];
+
+          showDialog<void>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Company Profile"),
+                content: ProfileView(
+                  name: name,
+                  imgPath: imgPath,
+                  experience: "",
+                  description: description,
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Back'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -506,6 +552,9 @@ class WorkerJobState extends State<WorkerJob> {
                       onTap: () async {
                         clicked(job['jobId'], job['assigned'], job['date'],
                             job['endTime'], job['riskSupport']);
+                      },
+                      onDoubleTap: () async {
+                        profileView(context, job['companyId']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items
