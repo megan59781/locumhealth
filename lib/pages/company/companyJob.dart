@@ -219,7 +219,7 @@ class CompanyJobState extends State<CompanyJob> {
           bool company = assignedData['company_job_complete'];
           bool worker = assignedData['company_job_complete'];
 
-          if (company && worker) {
+          if (company && worker || notComplete) {
             dbhandler
                 .child("Risk Support Plans")
                 .orderByChild('job_id')
@@ -240,34 +240,11 @@ class CompanyJobState extends State<CompanyJob> {
                 }
               }
             });
+            dbhandler.child('Assigned Jobs').child(assignedJobKey).remove();
           }
-
-          dbhandler.child('Assigned Jobs').child(assignedJobKey).remove();
         }
       }
     });
-    if (notComplete) {
-      dbhandler
-          .child("Risk Support Plans")
-          .orderByChild('job_id')
-          .equalTo(jobId)
-          .onValue
-          .take(1)
-          .listen((event) async {
-        if (event.snapshot.value != null) {
-          Map<dynamic, dynamic>? data =
-              event.snapshot.value as Map<dynamic, dynamic>?;
-          if (data != null) {
-            var riskSupportKey = data.keys.first;
-
-            dbhandler
-                .child('Risk Support Plans')
-                .child(riskSupportKey)
-                .remove();
-          }
-        }
-      });
-    }
   }
 
   Future<void> confirmJob(String jobId) async {
