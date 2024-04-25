@@ -346,6 +346,23 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         }
       }
     });
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var jobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(jobKey).remove();
+        }
+      }
+    });
   }
 
   Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
@@ -418,10 +435,10 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                               builder: (context) => CompanyNavigationBar(
                                   companyId: widget.companyId)));
                     }),
-                const SizedBox(height: 100),
+                const SizedBox(height: 50),
                 PushButton(
                     buttonSize: 60,
-                    text: "Back",
+                    text: "Delete Job",
                     onPress: () async {
                       await deleteJobDb(widget.jobId);
                       Navigator.push(
