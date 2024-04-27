@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 //import 'package:geolocator/geolocator.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:another_flushbar/flushbar.dart';
 
 class WorkerPreference extends StatefulWidget {
   final String workerId;
@@ -174,12 +177,21 @@ class WorkerPreferenceState extends State<WorkerPreference> {
       var address = '';
 
       if (placemarks.isNotEmpty) {
-        address += placemarks.reversed.last.subLocality ?? '';
-        address += ', ${placemarks.reversed.last.locality ?? ''}';
-        address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
+        var subLocality = placemarks.reversed.last.subLocality ?? '';
+        if (subLocality.trim().isNotEmpty) {
+          address += subLocality;
+        }
+        //address += ', ${placemarks.reversed.last.locality ?? ''}';
+        // address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
         //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
-        address += ', ${placemarks.reversed.last.postalCode ?? ''}';
-        address += ', ${placemarks.reversed.last.country ?? ''}';
+        //address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+        var postalCode = placemarks.reversed.last.postalCode ?? '';
+        if (postalCode.trim().isNotEmpty) {
+          if (address.isNotEmpty) {
+            address += ', ';
+          }
+          address += postalCode;
+        }
       }
 
       //print("Your Address for ($lat, $long) is: $address");
@@ -191,13 +203,19 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     }
   }
 
-  Future<void> adjustAvailableDb(int dayId, String workerId,
-      TimeOfDay startTime, TimeOfDay endTime, BuildContext context) async {
+  Future<void> adjustAvailableDb(
+      int dayId,
+      String workerId,
+      TimeOfDay startTime,
+      TimeOfDay endTime,
+      bool selected,
+      BuildContext context) async {
     dbhandler
         .child("Availability")
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
+        .take(1)
         .listen((event) async {
       DataSnapshot snapshot = event.snapshot;
 
@@ -214,34 +232,46 @@ class WorkerPreferenceState extends State<WorkerPreference> {
 
           if (existingEntryKey != null) {
             // Update existing entry
-            await dbhandler
-                .child("Availability")
-                .child(existingEntryKey)
-                .update({
-              "day_start_time": startTime.format(context),
-              "day_end_time": endTime.format(context)
-            });
+            if (selected) {
+              await dbhandler
+                  .child("Availability")
+                  .child(existingEntryKey)
+                  .update({
+                "day_start_time": startTime.format(context),
+                "day_end_time": endTime.format(context)
+              });
+            } else {
+              // Remove existing entry
+              await dbhandler
+                  .child("Availability")
+                  .child(existingEntryKey)
+                  .remove();
+            }
           } else {
-            // Add new entry
-            Map<String, dynamic> available = {
-              "day_id": dayId,
-              "worker_id": workerId,
-              "day_start_time": startTime.format(context),
-              "day_end_time": endTime.format(context)
-            };
-            await dbhandler.child("Availability").push().set(available);
+            if (selected) {
+              // Add new entry
+              Map<String, dynamic> available = {
+                "day_id": dayId,
+                "worker_id": workerId,
+                "day_start_time": startTime.format(context),
+                "day_end_time": endTime.format(context)
+              };
+              await dbhandler.child("Availability").push().set(available);
+            }
           }
         }
       } else {
-        // Handle case when there are no existing entries
-        // Add new entry since there's no existing entry for the worker
-        Map<String, dynamic> available = {
-          "day_id": dayId,
-          "worker_id": workerId,
-          "day_start_time": startTime.format(context),
-          "day_end_time": endTime.format(context)
-        };
-        await dbhandler.child("Availability").push().set(available);
+        if (selected) {
+          // Handle case when there are no existing entries
+          // Add new entry since there's no existing entry for the worker
+          Map<String, dynamic> available = {
+            "day_id": dayId,
+            "worker_id": workerId,
+            "day_start_time": startTime.format(context),
+            "day_end_time": endTime.format(context)
+          };
+          await dbhandler.child("Availability").push().set(available);
+        }
       }
     });
   }
@@ -456,10 +486,8 @@ class WorkerPreferenceState extends State<WorkerPreference> {
         return AlertDialog(
           title: const Text('Please Select your Time Availability'),
           content: SizedBox(
-            height: MediaQuery.of(context).size.width * 0.6,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const DisplayText(
                     text: "Start Time", fontSize: 25, colour: Colors.black),
@@ -513,13 +541,12 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 if (endTime.hour < startTime.hour ||
                     (endTime.hour == startTime.hour &&
                         endTime.minute <= startTime.minute)) {
-                  // Invalid end time, show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('End time must be after start time.'),
-                    ),
-                  );
-                }else{
+                  Flushbar(
+                    backgroundColor: Colors.black,
+                    message: "End time must be after start time.",
+                    duration: Duration(seconds: 4),
+                  ).show(context);
+                } else {
                   updateSelected(true, startTime, endTime);
                   Navigator.of(context).pop();
                 }
@@ -536,18 +563,32 @@ class WorkerPreferenceState extends State<WorkerPreference> {
     String workerId = widget.workerId;
     return MaterialApp(
         home: Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xffFCFAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xffFCFAFC),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 15), // Add padding above the title
+          child: Center(
+            child: DisplayText(
+                text: "Selected Availability",
+                fontSize: 36,
+                colour: Colors.black),
+          ),
+        ),
+        automaticallyImplyLeading: false, // Remove the back button
+      ),
       body: SafeArea(
-        child: Center(
+        child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const SizedBox(height: 30),
               const DisplayText(
-                  text: "Select Your Work Availability",
-                  fontSize: 28,
-                  colour: Colors.black),
-              const SizedBox(height: 20),
+                  text: 'Select Days and Times',
+                  fontSize: 30,
+                  colour: Color(0xFF280387)),
+              const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -665,31 +706,35 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   ),
                 ],
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 30),
               const DisplayText(
-                text: 'This is your set Location',
-                fontSize: 20,
-                colour: Colors.black,
-              ),
+                  text: 'Your Current Set Location',
+                  fontSize: 30,
+                  colour: Color(0xFF280387)),
+              const SizedBox(height: 15),
               DisplayText(
-                  text: currentLocation,
-                  fontSize: 20,
-                  colour: Colors.deepPurple),
-              const SizedBox(height: 20),
+                  text: currentLocation, fontSize: 26, colour: Colors.black),
+              const SizedBox(height: 15),
               PushButton(
                 buttonSize: 60,
                 text: 'Change Location', // TO DO MAKE SHOW MAIN LOCATION
-                onPress: () {
-                  locationSelector(context);
+                onPress: () async {
+                  await locationSelector(context);
+                  if (locationController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a valid location'),
+                      ),
+                    );
+                  }
                 },
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 30),
               DisplayText(
-                text: "Maximum Miles Traveled: ${currentMilesVal ?? 'Not set'}",
-                fontSize: 20,
-                colour: Colors.black,
-              ),
-              const SizedBox(height: 20),
+                  text: "Maximum Miles : ${currentMilesVal ?? 'Not set'}",
+                  fontSize: 30,
+                  colour: Color(0xFF280387)),
+              const SizedBox(height: 15),
               PushButton(
                   buttonSize: 60,
                   text: 'Change Miles',
@@ -701,37 +746,32 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                 buttonSize: 70,
                 text: 'Submit Preferences',
                 onPress: () async {
-                  if (selMon) {
-                    adjustAvailableDb(
-                        1, workerId, monStartTime, monEndTime, context);
-                  }
-                  if (selTue) {
-                    adjustAvailableDb(
-                        2, workerId, tueStartTime, tueEndTime, context);
-                  }
-                  if (selWed) {
-                    adjustAvailableDb(
-                        3, workerId, wedStartTime, wedEndTime, context);
-                  }
-                  if (selThu) {
-                    adjustAvailableDb(
-                        4, workerId, thuStartTime, thuEndTime, context);
-                  }
-                  if (selFri) {
-                    adjustAvailableDb(
-                        5, workerId, friStartTime, friEndTime, context);
-                  }
-                  if (selSat) {
-                    adjustAvailableDb(
-                        6, workerId, satStartTime, satEndTime, context);
-                  }
-                  if (selSun) {
-                    adjustAvailableDb(
-                        7, workerId, sunStartTime, sunEndTime, context);
-                  }
+                  await adjustAvailableDb(
+                      1, workerId, monStartTime, monEndTime, selMon, context);
+                  await adjustAvailableDb(
+                      2, workerId, tueStartTime, tueEndTime, selTue, context);
+
+                 await adjustAvailableDb(
+                      3, workerId, wedStartTime, wedEndTime, selWed, context);
+
+                  await adjustAvailableDb(
+                      4, workerId, thuStartTime, thuEndTime, selThu, context);
+
+                  await adjustAvailableDb(
+                      5, workerId, friStartTime, friEndTime, selFri, context);
+
+                  await adjustAvailableDb(
+                      6, workerId, satStartTime, satEndTime, selSat, context);
+
+                  await adjustAvailableDb(
+                      7, workerId, sunStartTime, sunEndTime, selSun, context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text("Availability Updated!"),
+                  ));
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
             ],
           ),
         ),

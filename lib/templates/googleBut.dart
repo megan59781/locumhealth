@@ -18,7 +18,7 @@ class GoogleButton extends StatelessWidget {
           clipBehavior: Clip.antiAlias, // <--add this
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18.0), // <--add this
+              borderRadius: BorderRadius.circular(100.0), // <--add this
             ),
             padding: EdgeInsets.zero, // <--add this
           ),

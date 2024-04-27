@@ -98,8 +98,8 @@ class CompanySettingsState extends State<CompanySettings> {
     String dropdownValue = value;
 
     // Dropdown items
-    List<String> dropdownItems = [  
-      'childcare',  
+    List<String> dropdownItems = [
+      'childcare',
       'physical disabilities',
       'elderly',
       'learning disabilities',
@@ -112,7 +112,7 @@ class CompanySettingsState extends State<CompanySettings> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
-              title: const Text("Change The Companys Main Care Type"),
+              title: const Text("Set the Main Care Type"),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -146,6 +146,9 @@ class CompanySettingsState extends State<CompanySettings> {
                     await updateProfile("img", dropdownValue);
 
                     Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text("Image Updated!"),
+                    ));
                   },
                   child: const Text('Change'),
                 ),
@@ -188,6 +191,9 @@ class CompanySettingsState extends State<CompanySettings> {
                 await updateProfile(item, value);
                 textController.clear();
                 Navigator.of(context).pop(value);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text("$item Updated!"),
+                ));
               },
               child: const Text('Change'),
             ),
@@ -197,44 +203,113 @@ class CompanySettingsState extends State<CompanySettings> {
     );
   }
 
+  Future<void> deleteJobs(String companyId) async {
+    List<String> jobIdList = [];
+    await dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('company_id')
+        .equalTo(companyId)
+        .once()
+        .then((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          data.forEach((key, value) {
+            String jobId = value['job_id'];
+            jobIdList.add(jobId);
+          });
+        }
+      }
+    });
+
+    for (String jobId in jobIdList) {
+      dbhandler
+          .child('Jobs')
+          .orderByChild('job_id')
+          .equalTo(jobId)
+          .onValue
+          .take(1)
+          .listen((event) async {
+        if (event.snapshot.value != null) {
+          Map<dynamic, dynamic>? data =
+              event.snapshot.value as Map<dynamic, dynamic>?;
+          if (data != null) {
+            // Assuming there is only one entry, you can access it directly
+            var jobKey = data.keys.first;
+            dbhandler.child('Jobs').child(jobKey).remove();
+          }
+        }
+      });
+      dbhandler
+          .child('Assigned Jobs')
+          .orderByChild('job_id')
+          .equalTo(jobId)
+          .onValue
+          .take(1)
+          .listen((event) async {
+        if (event.snapshot.value != null) {
+          Map<dynamic, dynamic>? data =
+              event.snapshot.value as Map<dynamic, dynamic>?;
+          if (data != null) {
+            // Assuming there is only one entry, you can access it directly
+            var jobKey = data.keys.first;
+            dbhandler.child('Assigned Jobs').child(jobKey).remove();
+          }
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-            child: Center(
+        backgroundColor: const Color(0xffFCFAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xffFCFAFC),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 15), // Add padding above the title
+          child: Center(
+            child: DisplayText(
+                text: 'Settings', fontSize: 36, colour: Colors.black),
+          ),
+        ),
+        automaticallyImplyLeading: false, // Remove the back button
+      ),
+      body: Center(
+            child: SingleChildScrollView(
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-              const SizedBox(height: 20),
-              const DisplayText(
-                  text: "Settings", fontSize: 30, colour: Colors.black),
-              const SizedBox(height: 40),
               PushButton(
                   buttonSize: 70,
                   text: "Change Name",
                   onPress: () =>
                       profileChanger(context, "Company Name", "name", name)),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
-                  text: "Change Image", 
-                  onPress: () =>
-                      imageChanger(context, imgPath)),
-              const SizedBox(height: 20),
-
+                  text: "Change Care Type",
+                  onPress: () => imageChanger(context, imgPath)),
+              const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
                   text: "Change Description",
-                  onPress: () => profileChanger(context, "About Your Company",
+                  onPress: () => profileChanger(context, "Your Company Summary",
                       "description", description)),
-              const SizedBox(height: 20),
-              // PushButton(
-              //     buttonSize: 70, text: "Delete Account", onPress: () => null),
-              // const SizedBox(height: 20),
+              const SizedBox(height: 25),
+              PushButton(
+                  buttonSize: 70,
+                  text: "Delete Account",
+                  onPress: () => {
+                        deleteJobs(widget.companyId),
+                        //TO DO: Delete the company profile
+                      }),
+              const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
             ]))));
   }
 }

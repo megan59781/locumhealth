@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyWorkerList.dart';
@@ -49,12 +50,21 @@ class CompanyJobState extends State<CompanyJob> {
       var address = '';
 
       if (placemarks.isNotEmpty) {
-        address += placemarks.reversed.last.subLocality ?? '';
-        address += ', ${placemarks.reversed.last.locality ?? ''}';
+        var subLocality = placemarks.reversed.last.subLocality ?? '';
+        if (subLocality.trim().isNotEmpty) {
+          address += subLocality;
+        }
+        //address += ', ${placemarks.reversed.last.locality ?? ''}';
         // address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
         //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
-        address += ', ${placemarks.reversed.last.postalCode ?? ''}';
-        // address += ', ${placemarks.reversed.last.country ?? ''}';
+        //address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+        var postalCode = placemarks.reversed.last.postalCode ?? '';
+        if (postalCode.trim().isNotEmpty) {
+          if (address.isNotEmpty) {
+            address += ', ';
+          }
+          address += postalCode;
+        }
       }
 
       //print("Your Address for ($lat, $long) is: $address");
@@ -388,12 +398,24 @@ class CompanyJobState extends State<CompanyJob> {
             TextButton(
               onPressed: () async {
                 if (riskImgBytes != null && supImgBytes != null) {
+                  Flushbar(
+                    backgroundColor: Colors.black,
+                    message:
+                        "Risk and Support Plans Added, this may take a second!",
+                    duration: Duration(seconds: 4),
+                  ).show(context);
                   await addRiskSupportDb(jobId);
                   await subitRiskSupport(jobId);
+
                   // addRiskSupportDb(jobId);
                   // subitRiskSupport(jobId);
                 } else {
-                  // TO DO: error message
+                  Flushbar(
+                    backgroundColor: Colors.black,
+                    message:
+                        "Please add both Risk and Support Plans before submitting!",
+                    duration: Duration(seconds: 4),
+                  ).show(context);
                 }
 
                 Navigator.of(context).pop();
@@ -475,13 +497,13 @@ class CompanyJobState extends State<CompanyJob> {
 
   Color pickColour(bool assigned, String workerId, bool riskSupport) {
     if (assigned && riskSupport == false) {
-      return Colors.yellow[400]!;
+      return const Color(0xff005ccc);
     } else if (assigned) {
-      return Colors.lightGreen[400]!;
+      return const Color(0xff007e32);
     } else if (workerId == "none") {
-      return Colors.pink[300]!;
+      return const Color(0xff631da3);
     } else {
-      return Colors.deepOrange[600]!;
+      return const Color(0xffb00003);
     }
   }
 
@@ -623,73 +645,115 @@ class CompanyJobState extends State<CompanyJob> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const DisplayText(
-                  text: "List of Current Jobs",
-                  fontSize: 30,
+    if (jobList.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xffFCFAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 30), // Add padding above the title
+            child: Center(
+              child: DisplayText(
+                  text: 'List of Current Jobs',
+                  fontSize: 36,
                   colour: Colors.black),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.5,
-                width: MediaQuery.of(context).size.width * 0.9,
-                child: ListView.builder(
-                  itemCount: jobList.length,
-                  itemBuilder: (context, index) {
-                    // Assuming each worker is represented as a Map
-                    Map<String, dynamic> job = jobList[index];
-                    return InkWell(
-                      onTap: () async {
-                        setState(() {
-                          clicked(
-                              job['jobId'],
-                              job['assigned'],
-                              job['workerId'],
-                              job['date'],
-                              job['endTime'],
-                              job['riskSupport']);
-                        });
-                      },
-                      onDoubleTap: () async {
-                        profileViewer(context, job['workerId']);
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.all(5), // between items
-                        padding:
-                            const EdgeInsets.all(10), // space inside item box
-                        decoration: BoxDecoration(
-                          color: pickColour(job['assigned'], job['workerId'],
-                              job['riskSupport']),
-                          border: Border.all(color: Colors.deepPurple),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ListTile(
-                          title: DisplayText(
-                              text:
-                                  "Job: ${index + 1} (Worker ${job['worker']})", //${job['workerId']})", TO DO PUT WORKER NAME
-                              fontSize: 20,
-                              colour: Colors.black),
-                          subtitle: DisplayText(
-                              text:
-                                  "Date: ${job['date']} \nTime: ${job['startTime']} to ${job['endTime']} \nLocation: ${job['location']}",
-                              fontSize: 18,
-                              colour: Colors.deepPurple),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+            ),
+          ),
+          automaticallyImplyLeading: false, // Remove the back button
+        ),
+        body: const SafeArea(
+          child: Center(
+              child: Padding(
+            padding:
+                EdgeInsets.symmetric(horizontal: 20), // Add horizontal padding
+            child: Text(
+              "No Current Jobs Created, Click the Create Job Tab to Create a New Job.",
+              style: TextStyle(
+                fontSize: 26,
+                color: Color(0xFF280387),
               ),
-              const SizedBox(height: 10),
-            ],
+              textAlign: TextAlign.center,
+            ),
+          )),
+        ),
+      );
+    } else {
+      return Scaffold(
+        backgroundColor: const Color(0xffFCFAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 30), // Add padding above the title
+            child: Center(
+              child: DisplayText(
+                  text: 'List of Current Jobs',
+                  fontSize: 36,
+                  colour: Colors.black),
+            ),
+          ),
+          automaticallyImplyLeading: false, // Remove the back button
+        ),
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  child: ListView.builder(
+                    itemCount: jobList.length,
+                    itemBuilder: (context, index) {
+                      // Assuming each worker is represented as a Map
+                      Map<String, dynamic> job = jobList[index];
+                      return InkWell(
+                        onTap: () async {
+                          setState(() {
+                            clicked(
+                                job['jobId'],
+                                job['assigned'],
+                                job['workerId'],
+                                job['date'],
+                                job['endTime'],
+                                job['riskSupport']);
+                          });
+                        },
+                        onDoubleTap: () async {
+                          profileViewer(context, job['workerId']);
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.all(5), // between items
+                          padding:
+                              const EdgeInsets.all(10), // space inside item box
+                          decoration: BoxDecoration(
+                            color: pickColour(job['assigned'], job['workerId'],
+                                job['riskSupport']),
+                            border: Border.all(color: Colors.black),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ListTile(
+                            title: DisplayText(
+                                text:
+                                    "Job: ${index + 1} (Worker ${job['worker']})", //${job['workerId']})", TO DO PUT WORKER NAME
+                                fontSize: 20,
+                                colour: const Color(0xffffffff)),
+                            subtitle: DisplayText(
+                                text:
+                                    "Date: ${job['date']} \nTime: ${job['startTime']} to ${job['endTime']} \nLocation: ${job['location']}",
+                                fontSize: 16,
+                                colour: const Color(0xfffcfcfc)),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 }

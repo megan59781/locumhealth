@@ -412,17 +412,25 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
   Widget build(BuildContext context) {
     if (workerList.isEmpty) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xffFCFAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 20), // Add padding above the title
+            child: Center(
+              child: DisplayText(
+                  text: "No Workers Available",
+                  fontSize: 36,
+                  colour: Colors.black),
+            ),
+          ),
+          automaticallyImplyLeading: false, // Remove the back button
+        ),
         body: SafeArea(
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const DisplayText(
-                    text: "No Workers Available",
-                    fontSize: 30,
-                    colour: Colors.black),
-                const SizedBox(height: 10),
                 PushButton(
                     buttonSize: 60,
                     text: "Keep Job",
@@ -433,9 +441,9 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => CompanyNavigationBar(
-                                  companyId: widget.companyId)));
+                                  companyId: widget.companyId, setIndex: 0)));
                     }),
-                const SizedBox(height: 50),
+                const SizedBox(height: 60),
                 PushButton(
                     buttonSize: 60,
                     text: "Delete Job",
@@ -445,7 +453,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => CompanyNavigationBar(
-                                  companyId: widget.companyId)));
+                                  companyId: widget.companyId, setIndex: 0)));
                     }),
               ],
             ),
@@ -454,17 +462,25 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
       );
     } else {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xffFCFAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 20), // Add padding above the title
+            child: Center(
+              child: DisplayText(
+                  text: "List of Available Workers",
+                  fontSize: 36,
+                  colour: Colors.black),
+            ),
+          ),
+          automaticallyImplyLeading: false, // Remove the back button
+        ),
         body: SafeArea(
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const DisplayText(
-                    text: "List of Available Workers",
-                    fontSize: 30,
-                    colour: Colors.black),
-                const SizedBox(height: 10),
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.5,
                   width: MediaQuery.of(context).size.width * 0.9,
@@ -482,7 +498,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                               context,
                               MaterialPageRoute(
                                   builder: (context) => CompanyNavigationBar(
-                                      companyId: widget.companyId)));
+                                      companyId: widget.companyId,
+                                      setIndex: 0)));
                         },
                         child: Container(
                           margin: const EdgeInsets.all(5), // between items
@@ -513,7 +530,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => CompanyNavigationBar(
-                                  companyId: widget.companyId)));
+                                  companyId: widget.companyId, setIndex: 0)));
                     }),
               ],
             ),

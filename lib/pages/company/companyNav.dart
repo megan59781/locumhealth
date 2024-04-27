@@ -6,17 +6,23 @@ import 'package:fyp/pages/company/companyProfile.dart';
 
 class CompanyNavigationBar extends StatefulWidget {
   final String companyId;
+  final int setIndex;
 
-  const CompanyNavigationBar({super.key, required this.companyId});
+  const CompanyNavigationBar(
+      {super.key, required this.companyId, required this.setIndex});
 
   @override
-  State<CompanyNavigationBar> createState() => CompanyNavigationBarState(companyId: companyId);
+  State<CompanyNavigationBar> createState() =>
+      CompanyNavigationBarState(companyId: companyId, setIndex: setIndex);
 }
 
 class CompanyNavigationBarState extends State<CompanyNavigationBar> {
   final String companyId;
+  final int setIndex;
 
-  CompanyNavigationBarState({required this.companyId});
+  CompanyNavigationBarState({required this.companyId, required this.setIndex}) {
+    _selectedIndex = setIndex;
+  }
 
   int _selectedIndex = 0;
   static const TextStyle optionStyle =

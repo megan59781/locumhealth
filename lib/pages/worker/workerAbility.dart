@@ -92,7 +92,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
     'Mental Health Training',
     'Elderly Care Training',
     'Child Care Training',
-    'Disability Care Training',
+    'Disability are Training',
     'Palliative Care Training',
     'Dementia Care Training',
     'Stoma Training',
@@ -104,19 +104,25 @@ class WorkerAbilityState extends State<WorkerAbility> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xffFCFAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xffFCFAFC),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 20), // Add padding above the title
+          child: Center(
+            child: DisplayText(
+                text: "Selected Abilities", fontSize: 36, colour: Colors.black),
+          ),
+        ),
+        automaticallyImplyLeading: false, // Remove the back button
+      ),
       body: SafeArea(
         child: Center(
           child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                const SizedBox(height: 60),
-                const DisplayText(
-                    text: "Select Your Abilities",
-                    fontSize: 30,
-                    colour: Colors.black),
-                const SizedBox(height: 10),
+                const SizedBox(height: 25),
                 Expanded(
                   child: ListView.builder(
                     itemBuilder: (BuildContext context, int index) {
@@ -153,16 +159,19 @@ class WorkerAbilityState extends State<WorkerAbility> {
                     itemCount: selections.length,
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 25),
                 PushButton(
                   buttonSize: 70,
                   text: 'Submit Abilities',
                   onPress: () {
                     addAbilitysDb(widget.workerId);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text("Abilities Updated!"),
+                  ));
                     //Navigator.pop(context);
                   },
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 50),
               ]),
         ),
       ),

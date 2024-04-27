@@ -8,12 +8,14 @@ import 'package:fyp/pages/worker/workerSettings.dart';
 // Define WorkerNavigationBar widget
 class WorkerNavigationBar extends StatefulWidget {
   final String workerId;
+  final int setIndex;
 
-  const WorkerNavigationBar({super.key, required this.workerId});
+  const WorkerNavigationBar(
+      {super.key, required this.workerId, required this.setIndex});
 
   @override
   State<WorkerNavigationBar> createState() =>
-      WorkerNavigationBarState(workerId: workerId);
+      WorkerNavigationBarState(workerId: workerId, setIndex: setIndex);
 }
 
 // Define WorkerNavigationBarState widget
@@ -21,10 +23,13 @@ class WorkerNavigationBar extends StatefulWidget {
 /// It manages the state of the bottom navigation bar and the corresponding content.
 class WorkerNavigationBarState extends State<WorkerNavigationBar> {
   final String workerId;
+  final int setIndex;
 
   /// Constructs a new instance of WorkerNavigationBarState.
   /// The [workerId] parameter is required and represents the ID of the worker.
-  WorkerNavigationBarState({required this.workerId});
+  WorkerNavigationBarState({required this.workerId, required this.setIndex}) {
+    _selectedIndex = setIndex;
+  }
 
   int _selectedIndex = 0;
   static const TextStyle optionStyle =
@@ -63,13 +68,9 @@ class WorkerNavigationBarState extends State<WorkerNavigationBar> {
             label: 'Jobs',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.check_box_outlined),
-            label: 'Preferences',
+            icon: Icon(Icons.calendar_month_outlined),
+            label: 'Availability',
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.calendar_month_outlined),
-          //   label: 'Availability',
-          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.verified_outlined),
             label: 'Abilities',

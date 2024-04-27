@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp/pages/worker/workerNav.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/profileView.dart';
 
@@ -54,31 +55,47 @@ class WorkerProfileState extends State<WorkerProfile> {
 
   @override
   Widget build(BuildContext context) {
-    // setState(() {
-    //   getProfile(widget.workerId);
-    // });
     return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xffFCFAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 20), // Add padding above the title
+            child: Center(
+              child: DisplayText(
+                  text: "Your Profile", fontSize: 36, colour: Colors.black),
+            ),
+          ),
+          automaticallyImplyLeading: false, // Remove the back button
+        ),
         body: SafeArea(
             child: Center(
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-              const SizedBox(height: 30),
-              const DisplayText(
-                  text: "Your Profile", fontSize: 30, colour: Colors.black),
-                  const SizedBox(height: 40),
+              const SizedBox(height: 10),
               ProfileView(
-                  name: name,
-                  imgPath: imgPath,
-                  experience: '$experience Years Experience',
-                  description: description,
-                  scale: 1,),
+                name: name,
+                imgPath: imgPath,
+                experience: '$experience Years Experience',
+                description: description,
+                scale: 1,
+              ),
               const SizedBox(height: 40),
-              const DisplayText(
-                  text: "To edit your profile go to settings",
-                  fontSize: 20,
-                  colour: Colors.deepPurple),
+              TextButton(
+                onPressed: () {
+                  // Action to perform when the button is pressed
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              WorkerNavigationBar(workerId: widget.workerId, setIndex: 4)));
+                },
+                child: const DisplayText(
+                    text: "To edit the profile go to settings",
+                    fontSize: 18,
+                    colour: Colors.deepPurple),
+              ),
             ]))));
   }
 }

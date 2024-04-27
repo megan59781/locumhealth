@@ -20,6 +20,8 @@ class PushButton extends StatelessWidget {
         onPressed: onPress,
         style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all(Colors.deepPurple),
+            elevation: MaterialStateProperty.all(5),
+            shadowColor: MaterialStateProperty.all(Colors.blueGrey[300]!.withOpacity(0.5)),
             padding: MaterialStateProperty.all(const EdgeInsets.all(0))),
         child: Text(text,
             style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),

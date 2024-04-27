@@ -31,11 +31,12 @@ class ProfileView extends StatelessWidget {
           DisplayText(text: experience, fontSize: 30/scale, colour: Colors.black),
         const SizedBox(height: 20),
         Container(
-            height: 200/scale,
+            height: 270/scale,
             width: 350/scale,
             padding:
                 const EdgeInsets.symmetric(horizontal: 2.0, vertical: 10.0),
             decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10.0),
                 border: Border.all(color: Colors.black, width: 2)),
             child: DisplayText(
                 text: description, fontSize: 20/scale, colour: Colors.black)),

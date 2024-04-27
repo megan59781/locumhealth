@@ -145,6 +145,9 @@ class WorkerSettingsState extends State<WorkerSettings> {
                     await updateProfile("img", dropdownValue);
 
                     Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text("Gender Updated!"),
+                    ));
                   },
                   child: const Text('Change'),
                 ),
@@ -187,6 +190,9 @@ class WorkerSettingsState extends State<WorkerSettings> {
                 await updateProfile(item, value);
                 textController.clear();
                 Navigator.of(context).pop(value);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text("$item Updated!"),
+                ));
               },
               child: const Text('Change'),
             ),
@@ -267,49 +273,6 @@ class WorkerSettingsState extends State<WorkerSettings> {
     });
   }
 
-  // Future<void> unassignJobs(String workerId) async {
-  //   List<String> jobIdList = [];
-  //   dbhandler
-  //       .child('Assigned Jobs')
-  //       .orderByChild('worker_id')
-  //       .equalTo(workerId)
-  //       .onValue
-  //       .listen((DatabaseEvent event) async {
-  //     if (event.snapshot.value != null) {
-  //       Map<dynamic, dynamic>? data =
-  //           event.snapshot.value as Map<dynamic, dynamic>?;
-  //       if (data != null) {
-  //         data.forEach((key, value) {
-  //           String jobId = value['job_id'];
-  //           jobIdList.add(jobId);
-  //         });
-  //       }
-  //     }
-  //   });
-  //   for (String jobId in jobIdList) {
-  //     dbhandler
-  //         .child('Assigned Jobs')
-  //         .orderByChild('job_id')
-  //         .equalTo(jobId)
-  //         .once()
-  //         .then((event) async {
-  //       if (event.snapshot.value != null) {
-  //         Map<dynamic, dynamic>? data =
-  //             event.snapshot.value as Map<dynamic, dynamic>?;
-
-  //         if (data != null) {
-  //           // Assuming there is only one entry, you can access it directly
-  //           var assignedJobKey = data.keys.first;
-  //           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
-  //             'worker_id': "none",
-  //             'worker_accepted': false,
-  //           });
-  //         }
-  //       }
-  //     });
-  //   }
-  // }
-
   Future<void> unassignJobs(String workerId) async {
     List<String> jobIdList = [];
 
@@ -362,40 +325,48 @@ class WorkerSettingsState extends State<WorkerSettings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
+        backgroundColor: const Color(0xffFCFAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 20), // Add padding above the title
             child: Center(
+              child: DisplayText(
+                  text: "Settings", fontSize: 36, colour: Colors.black),
+            ),
+          ),
+          automaticallyImplyLeading: false, // Remove the back button
+        ),
+        body: Center(
+            child: SingleChildScrollView(
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-              const SizedBox(height: 20),
-              const DisplayText(
-                  text: "Settings", fontSize: 30, colour: Colors.black),
-              const SizedBox(height: 40),
               PushButton(
                   buttonSize: 70,
                   text: "Change Name",
                   onPress: () =>
                       profileChanger(context, "Profile Name", "name", name)),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
                   text: "Change Gender", ///////////////////// TO DO
                   onPress: () =>
                       genderChanger(context, imgPath)), //////////////// TO DO
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
                   text: "Change Experience",
                   onPress: () => profileChanger(context, "Years of Experience",
                       "experience", experience.toString())),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
                   text: "Change Description",
                   onPress: () => profileChanger(context, "About you summary",
                       "description", description)),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
               PushButton(
                 buttonSize: 70,
                 text: "Delete Account",
@@ -409,10 +380,10 @@ class WorkerSettingsState extends State<WorkerSettings> {
                   //sign out
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
             ]))));
   }
 }
