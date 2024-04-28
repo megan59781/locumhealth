@@ -6,6 +6,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/helpBut.dart';
 import 'package:fyp/templates/profileView.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
@@ -33,7 +34,6 @@ class CompanyJobState extends State<CompanyJob> {
   void initState() {
     super.initState();
     String companyId = widget.companyId;
-
     setState(() {
       getJobs(companyId, (List<dynamic> jobDetailList) {
         setState(() {
@@ -327,7 +327,17 @@ class CompanyJobState extends State<CompanyJob> {
                   confirmJob(jobId);
                   deleteJobDb(jobId, false);
                 });
+                getJobs(widget.companyId, (List<dynamic> jobDetailList) {
+                  setState(() {
+                    jobList = jobDetailList;
+                  });
+                });
                 Navigator.of(context).pop();
+                Flushbar(
+                  backgroundColor: Colors.black,
+                  message: "Job Confirmed!",
+                  duration: Duration(seconds: 4),
+                ).show(context);
               },
               child: const Text('Yes'),
             ),
@@ -578,7 +588,17 @@ class CompanyJobState extends State<CompanyJob> {
             TextButton(
               onPressed: () async {
                 await deleteJobDb(jobId, true);
+                getJobs(widget.companyId, (List<dynamic> jobDetailList) {
+                  setState(() {
+                    jobList = jobDetailList;
+                  });
+                });
                 Navigator.of(context).pop();
+                Flushbar(
+                  backgroundColor: Colors.black,
+                  message: "Job Deleted!",
+                  duration: Duration(seconds: 4),
+                ).show(context);
               },
               child: const Text('Delete'),
             ),
@@ -697,10 +717,12 @@ class CompanyJobState extends State<CompanyJob> {
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  width: MediaQuery.of(context).size.width * 0.9,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 40),
+                Expanded(
+                  // height: MediaQuery.of(context).size.height * 0.5,
+                  // width: MediaQuery.of(context).size.width * 0.9,
                   child: ListView.builder(
                     itemCount: jobList.length,
                     itemBuilder: (context, index) {
@@ -722,7 +744,7 @@ class CompanyJobState extends State<CompanyJob> {
                           profileViewer(context, job['workerId']);
                         },
                         child: Container(
-                          margin: const EdgeInsets.all(5), // between items
+                          margin: const EdgeInsets.all(20), // between items
                           padding:
                               const EdgeInsets.all(10), // space inside item box
                           decoration: BoxDecoration(
@@ -749,6 +771,19 @@ class CompanyJobState extends State<CompanyJob> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                Container(
+                  alignment: Alignment.centerRight,
+                  margin: const EdgeInsets.only(top: 20, right: 30),
+                  child: const HelpButton(
+                      message: 'Job colour meaning; \n'
+                          '- Red: waiting for the woker to accept \n'
+                          '- Blue: worker assigned click the job to add the risk and support plans \n'
+                          '- Pink: no worker assigned, click to assign a worker to the job \n'
+                          '- Green: job is active, to delete the job click, once the job is completed click to confirm \n\n'
+                          'Double tap on the job to view the worker profile.',
+                      title: "Job Viewer"),
+                ),
+                const SizedBox(height: 30),
               ],
             ),
           ),

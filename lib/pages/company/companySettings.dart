@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/pages/login.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/helpBut.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -265,23 +266,24 @@ class CompanySettingsState extends State<CompanySettings> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: const Color(0xffFCFAFC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xffFCFAFC),
-        title: const Padding(
-          padding: EdgeInsets.only(top: 15), // Add padding above the title
-          child: Center(
-            child: DisplayText(
-                text: 'Settings', fontSize: 36, colour: Colors.black),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 15), // Add padding above the title
+            child: Center(
+              child: DisplayText(
+                  text: 'Settings', fontSize: 36, colour: Colors.black),
+            ),
           ),
+          automaticallyImplyLeading: false, // Remove the back button
         ),
-        automaticallyImplyLeading: false, // Remove the back button
-      ),
-      body: Center(
+        body: Center(
             child: SingleChildScrollView(
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+              const SizedBox(height: 90),
               PushButton(
                   buttonSize: 70,
                   text: "Change Name",
@@ -309,7 +311,17 @@ class CompanySettingsState extends State<CompanySettings> {
               const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
-              const SizedBox(height: 25),
+              const SizedBox(height: 75),
+              Container(
+                alignment: Alignment.centerRight,
+                margin: const EdgeInsets.only(top: 20, right: 30),
+                child: const HelpButton(
+                    message:
+                        'Select a button to change your profile\n\n'
+                        'To remove your account click Delete Account \n\n'
+                        'Click the Sign Out button to log out of your account',
+                    title: "Settings"),
+              ),
             ]))));
   }
 }

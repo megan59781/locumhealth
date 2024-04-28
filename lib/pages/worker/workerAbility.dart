@@ -1,6 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/helpBut.dart';
 import 'package:fyp/templates/pushBut.dart';
 
 class WorkerAbility extends StatefulWidget {
@@ -159,19 +160,30 @@ class WorkerAbilityState extends State<WorkerAbility> {
                     itemCount: selections.length,
                   ),
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 40),
                 PushButton(
                   buttonSize: 70,
                   text: 'Submit Abilities',
                   onPress: () {
                     addAbilitysDb(widget.workerId);
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text("Abilities Updated!"),
-                  ));
+                      content: Text("Abilities Updated!"),
+                    ));
                     //Navigator.pop(context);
                   },
                 ),
-                const SizedBox(height: 50),
+                // const SizedBox(height: 50),
+                const SizedBox(height: 15),
+                Container(
+                  alignment: Alignment.centerRight,
+                  margin: const EdgeInsets.only(top: 20, right: 30),
+                  child: const HelpButton(
+                      message:
+                          "Select the checkbox to tick the abilities you can do \n\n"
+                          "Click the submit button to save your abilities, you can't delete abilities once saved, but you can add more",
+                      title: "Ability"),
+                ),
+                const SizedBox(height: 25),
               ]),
         ),
       ),
