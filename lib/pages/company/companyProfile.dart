@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp/pages/company/companyNav.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/profileView.dart';
 
@@ -53,16 +54,24 @@ class CompanyProfileState extends State<CompanyProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xffFCFAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xffFCFAFC),
+          title: const Padding(
+            padding: EdgeInsets.only(top: 15), // Add padding above the title
+            child: Center(
+              child: DisplayText(
+                  text: 'Company Profile', fontSize: 36, colour: Colors.black),
+            ),
+          ),
+          automaticallyImplyLeading: false, // Remove the back button
+        ),
         body: SafeArea(
             child: Center(
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
               const SizedBox(height: 30),
-              const DisplayText(
-                  text: "Company Profile", fontSize: 30, colour: Colors.black),
-              const SizedBox(height: 40),
               ProfileView(
                   name: name,
                   imgPath: imgPath,
@@ -70,10 +79,20 @@ class CompanyProfileState extends State<CompanyProfile> {
                   description: description,
                   scale: 1),
               const SizedBox(height: 40),
-              const DisplayText(
-                  text: "To edit the profile go to settings",
-                  fontSize: 20,
-                  colour: Colors.deepPurple),
+              TextButton(
+                onPressed: () {
+                  // Action to perform when the button is pressed
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              CompanyNavigationBar(companyId: widget.companyId, setIndex: 3)));
+                },
+                child: const DisplayText(
+                    text: "To edit the profile go to settings",
+                    fontSize: 18,
+                    colour: Colors.deepPurple),
+              ),
             ]))));
   }
 }

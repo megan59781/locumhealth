@@ -23,7 +23,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
   final TextEditingController locationController = TextEditingController();
   double lat = 0.0;
   double long = 0.0;
-  String currentLocation = "get location";
+  String currentLocation = "Get Location";
 
   DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay selectedTime = TimeOfDay.now();
@@ -166,10 +166,8 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
         return AlertDialog(
           title: const Text('Please Select the Time'),
           content: SizedBox(
-            height: MediaQuery.of(context).size.width * 0.6,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const DisplayText(
                     text: "Selected Time", fontSize: 25, colour: Colors.black),
@@ -254,11 +252,22 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
       var address = '';
 
       if (placemarks.isNotEmpty) {
-        address += placemarks.reversed.last.subLocality ?? '';
+        //address += placemarks.reversed.last.subLocality ?? '';
+        var subLocality = placemarks.reversed.last.subLocality ?? '';
+        if (subLocality.trim().isNotEmpty) {
+          address += subLocality;
+        }
         //address += ', ${placemarks.reversed.last.locality ?? ''}';
         // address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
         //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
-        address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+        //address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+        var postalCode = placemarks.reversed.last.postalCode ?? '';
+        if (postalCode.trim().isNotEmpty) {
+          if (address.isNotEmpty) {
+            address += ', ';
+          }
+          address += postalCode;
+        }
         // address += ', ${placemarks.reversed.last.country ?? ''}';
       }
 
@@ -271,16 +280,18 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     }
   }
 
-  Future<void> getLocationCoordinates(BuildContext context) async {
+  Future<String> getLocationCoordinates(BuildContext context) async {
     final String location = locationController.text;
-
+    String address = location;
     try {
       List<Location> locations = await locationFromAddress(location);
       if (locations.isNotEmpty) {
         lat = locations[0].latitude;
         long = locations[0].longitude;
-        currentLocation =
-            await getPlacemarks(lat, long); //pass through placemarks
+        currentLocation = await getPlacemarks(lat, long);
+        setState(() {
+          address = currentLocation;
+        }); //pass through placemarks
         print(lat);
         print(long);
       } else {
@@ -289,9 +300,16 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     } catch (e) {
       print('Error during geocoding: $e');
     }
+    return address;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
+  int stringTimeToMins(String time) {
+    List<String> parts = time.split(':');
+    int hours = int.parse(parts[0]);
+    int minutes = int.parse(parts[1]);
+    return hours * 60 + minutes;
+  }
 
   Future<void> addJobDb(
       String date,
@@ -329,19 +347,29 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     String companyId = widget.companyId;
     String jobId = "";
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const SizedBox(height: 10),
-            const DisplayText(
-                text: 'Create a New Job', fontSize: 34, colour: Colors.black),
-            const SizedBox(height: 20),
+      backgroundColor: const Color(0xffFCFAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xffFCFAFC),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 30), // Add padding above the title
+          child: Center(
+            child: DisplayText(
+                text: 'Create a New Job', fontSize: 36, colour: Colors.black),
+          ),
+        ),
+        automaticallyImplyLeading: false, // Remove the back button
+      ),
+      body: Center(
+            child: SingleChildScrollView(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
             const DisplayText(
                 text: 'Select Date of the Job',
                 fontSize: 30,
-                colour: Colors.deepPurple),
-            const SizedBox(height: 10),
+                colour: Color(0xFF280387)),
+            const SizedBox(height: 15),
             Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -354,17 +382,17 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                     onPress: () => _dateSelector(context),
                   ),
                 ]),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             PushButton(
                 buttonSize: 55,
                 text: "Select Abilities",
                 onPress: () => abilitySelector(context, selections)),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             const DisplayText(
                 text: 'Select Time of the Job',
                 fontSize: 30,
-                colour: Colors.deepPurple),
-            const SizedBox(height: 10),
+                colour: Color(0xFF280387)),
+            const SizedBox(height: 15),
             Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -400,43 +428,73 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                     }),
                   ),
                 ]),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             const DisplayText(
                 text: 'Select the Job Location',
                 fontSize: 30,
-                colour: Colors.deepPurple),
+                colour: Color(0xFF280387)),
             Padding(
               padding: const EdgeInsets.all(15),
               child: DateTimeText(
                 text: currentLocation,
                 icon: const Icon(Icons.map_outlined),
-                onPress: () {
+                onPress: () async {
+                  await locationSelector(context);
+                  String location = await getLocationCoordinates(context);
                   setState(() {
-                    locationSelector(context);
+                    currentLocation = location;
+                    if (currentLocation.isEmpty) {
+                      currentLocation = "Get Location";
+                    }
                   });
                 },
               ),
             ),
             const SizedBox(height: 30),
             PushButton(
-              buttonSize: 60,
+              buttonSize: 70,
               text: 'Create Job',
               onPress: () async {
-                addJobDb(dateString, companyId, startTime, endTime, lat, long,
-                    context, (value) {
-                  setState(() {
-                    jobId = value;
-                    print("check here");
-                    print(jobId);
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => CompanyWorkerList(
-                                companyId: widget.companyId, jobId: jobId, abilityList: selectedAbilitys)));
+                int timeDif = stringTimeToMins(endTime.format(context)) -
+                    stringTimeToMins(startTime.format(context));
+                if (lat == 0.0 || long == 0.0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid location'),
+                    ),
+                  );
+                } else if (timeDif < 29) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Please make sure the job ends at least 30 minutes after it starts'),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Job Created Successfully'),
+                    ),
+                  );
+                  addJobDb(dateString, companyId, startTime, endTime, lat, long,
+                      context, (value) {
+                    setState(() {
+                      jobId = value;
+                      print("check here");
+                      print(jobId);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => CompanyWorkerList(
+                                  companyId: widget.companyId,
+                                  jobId: jobId,
+                                  abilityList: selectedAbilitys)));
+                    });
                   });
-                });
+                }
               },
             ),
+            const SizedBox(height: 30),
           ]),
         ),
       ),

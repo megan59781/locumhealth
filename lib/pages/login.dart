@@ -86,7 +86,10 @@ class LoginState extends State<Login> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => WorkerNavigationBar(workerId: user.uid)));
+            builder: (context) => WorkerNavigationBar(
+                  workerId: user.uid,
+                  setIndex: 0,
+                )));
   }
 
   /// Adds a company to the database if it doesn't already exist.
@@ -122,7 +125,7 @@ class LoginState extends State<Login> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => CompanyNavigationBar(companyId: user.uid)));
+            builder: (context) => CompanyNavigationBar(companyId: user.uid, setIndex: 0)));
   }
 
   Future<void> addProfileDb(String userId, String name, String img) async {
@@ -167,7 +170,8 @@ class LoginState extends State<Login> {
         context: context,
         initialDate: selectedDate,
         firstDate: selectedDate.subtract(const Duration(days: (31025))),
-        lastDate: minAgeDate);
+        lastDate: minAgeDate,
+        helpText: 'Please Pick Your Birthday' );
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -204,14 +208,24 @@ class LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xffFCFAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xffFCFAFC),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 15), // Add padding above the title
+          child: Center(
+            child: DisplayText(
+                text: 'Login or Register', fontSize: 36, colour: Colors.black),
+          ),
+        ),
+        automaticallyImplyLeading: false, // Remove the back button
+      ),
       body: SafeArea(
         child: Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const SizedBox(height: 100),
             DisplayText(
                 text: 'Company Login', fontSize: 40, colour: Colors.pink[900]),
-            const SizedBox(height: 50),
+            const SizedBox(height: 30),
             GoogleButton(
               image: "google_icon_c.png",
               onPress: () async {
@@ -224,10 +238,10 @@ class LoginState extends State<Login> {
                 }
               },
             ),
-            const SizedBox(height: 100),
+            const SizedBox(height: 60),
             DisplayText(
                 text: 'Worker Login', fontSize: 40, colour: Colors.teal[900]),
-            const SizedBox(height: 50),
+            const SizedBox(height: 30),
             GoogleButton(
               image: "google_icon_w.png",
               onPress: () async {
@@ -240,7 +254,7 @@ class LoginState extends State<Login> {
                 }
               },
             ),
-            const SizedBox(height: 100),
+            const SizedBox(height: 50),
           ]),
         ),
       ),
