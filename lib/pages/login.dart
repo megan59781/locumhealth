@@ -76,7 +76,7 @@ class LoginState extends State<Login> {
           "miles": 1,
         };
         dbhandler.child("Worker").push().set(worker).then((value) async {
-          await addProfileDb(user.uid, name);
+          await addProfileDb(user.uid, name, "default");
           await Future.delayed(const Duration(seconds: 5));
         }).catchError((error) {
           //print("Error saving to Firebase: $error");
@@ -112,7 +112,7 @@ class LoginState extends State<Login> {
         };
         dbhandler.child("Company").push().set(company).then((value) async {
           print("works company");
-          await addProfileDb(user.uid, name);
+          await addProfileDb(user.uid, name, "general care");
           //Navigator.of(context).pop();
         }).catchError((error) {
           print("Error saving to Firebase: $error");
@@ -125,10 +125,10 @@ class LoginState extends State<Login> {
             builder: (context) => CompanyNavigationBar(companyId: user.uid)));
   }
 
-  Future<void> addProfileDb(String userId, String name) async {
+  Future<void> addProfileDb(String userId, String name, String img) async {
     Map<String, dynamic> profile = {
       "user_id": userId,
-      "img": "general care",
+      "img": img,
       "name": name,
       "experience": 1,
       "description": "No description",

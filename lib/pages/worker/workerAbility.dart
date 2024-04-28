@@ -88,7 +88,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
   static const List<String> selections = <String>[
     'First Aid',
     'Manual Handling',
-    'Medicication Administration',
+    'Medication Administration',
     'Mental Health Training',
     'Elderly Care Training',
     'Child Care Training',

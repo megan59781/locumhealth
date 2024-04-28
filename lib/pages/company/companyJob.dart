@@ -219,7 +219,7 @@ class CompanyJobState extends State<CompanyJob> {
           bool company = assignedData['company_job_complete'];
           bool worker = assignedData['company_job_complete'];
 
-          if (company && worker || notComplete) {
+          if (company && worker || notComplete == true) {
             dbhandler
                 .child("Risk Support Plans")
                 .orderByChild('job_id')
@@ -656,8 +656,7 @@ class CompanyJobState extends State<CompanyJob> {
                         });
                       },
                       onDoubleTap: () async {
-                        profileViewer(context,
-                            "AIhwMbH3ExbIWVzAITBTBk1GX813"); //job['workerId']);
+                        profileViewer(context, job['workerId']);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(5), // between items

@@ -35,7 +35,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
   static const List<String> selections = <String>[
     'First Aid',
     'Manual Handling',
-    'Medicication Administration',
+    'Medication Administration',
     'Mental Health Training',
     'Elderly Care Training',
     'Child Care Training',
@@ -357,7 +357,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
             const SizedBox(height: 20),
             PushButton(
                 buttonSize: 55,
-                text: "Select Abilitys",
+                text: "Select Abilities",
                 onPress: () => abilitySelector(context, selections)),
             const SizedBox(height: 20),
             const DisplayText(

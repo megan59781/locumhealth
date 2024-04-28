@@ -193,7 +193,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                       .orderByChild('worker_id')
                       .equalTo(workerId)
                       .onValue
-                      .listen((event) {
+                      .listen((event) async {
                     print(
                         'Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
                     if (event.snapshot.value != null) {
@@ -220,61 +220,72 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                         }
                       }
                     }
-                    print("megan this is a sucess");
+                    print("HERE MATCHED");
                     print(matchedWorkerList);
 
                     List<Tuple2<String, int>> fullyMatchedWorkerList = [];
 
                     for (String workerId in matchedWorkerList) {
-                      dbhandler
-                          .child('Ability')
-                          .orderByChild('worker_id')
-                          .equalTo(workerId)
-                          .onValue
-                          .listen((event) async {
-                        print(
-                            'HERE ABILITIES Snapshot: ${event.snapshot.value}');
-                        if (event.snapshot.value != null) {
-                          Map<dynamic, dynamic>? data =
-                              event.snapshot.value as Map<dynamic, dynamic>?;
-                          if (data != null) {
-                            List<String> workerAbilities = [];
-                            // Assuming there is only one entry, you can access it directly
-                            var abilityKey = data.keys.first;
-                            var abilityData = data[abilityKey];
-                            abilityData.forEach((key, value) {
-                              if (key != 'worker_id') {
-                                workerAbilities.add(key);
-                              }
-                            });
-                            print("HERE LIST: $workerAbilities");
+                      print("HERE HERE WORKER ID: $workerId");
+                      if (widget.abilityList.isEmpty) {
+                        int jobCount = await workerJobCount(workerId);
+                        fullyMatchedWorkerList.add(Tuple2(workerId, jobCount));
+                        print("HERE in here");
+                        print(fullyMatchedWorkerList);
+                      } else {
+                        dbhandler
+                            .child('Ability')
+                            .orderByChild('worker_id')
+                            .equalTo(workerId)
+                            .onValue
+                            .listen((event) async {
+                          print(
+                              'HERE ABILITIES Snapshot: ${event.snapshot.value}');
+                          if (event.snapshot.value != null) {
+                            Map<dynamic, dynamic>? data =
+                                event.snapshot.value as Map<dynamic, dynamic>?;
+                            if (data != null) {
+                              List<String> workerAbilities = [];
+                              // Assuming there is only one entry, you can access it directly
+                              var abilityKey = data.keys.first;
+                              var abilityData = data[abilityKey];
+                              abilityData.forEach((key, value) {
+                                if (key != 'worker_id') {
+                                  workerAbilities.add(key);
+                                }
+                              });
+                              print("HERE LIST: $workerAbilities");
 
-                            // Check if all abilities are present
-                            bool allAbilitiesPresent = true;
-                            for (String ability in widget.abilityList) {
-                              if (!workerAbilities.contains(ability)) {
-                                allAbilitiesPresent = false;
-                                break;
+                              // Check if all abilities are present
+                              bool allAbilitiesPresent = true;
+                              for (String ability in widget.abilityList) {
+                                if (!workerAbilities.contains(ability)) {
+                                  allAbilitiesPresent = false;
+                                  break;
+                                }
                               }
-                            }
 
-                            if (allAbilitiesPresent) {
-                              int jobCount = await workerJobCount(workerId);
-                              fullyMatchedWorkerList
-                                  .add(Tuple2(workerId, jobCount));
+                              if (allAbilitiesPresent) {
+                                int jobCount = await workerJobCount(workerId);
+                                fullyMatchedWorkerList
+                                    .add(Tuple2(workerId, jobCount));
+                              }
                             }
                           }
-                        }
-                        // sort the list by job count
-                        fullyMatchedWorkerList
-                            .sort((a, b) => a.item2.compareTo(b.item2));
-                        //print(fullyMatchedWorkerLis);
-                        List<String> orderedWorkers = fullyMatchedWorkerList
-                            .map((tuple) => tuple.item1)
-                            .toList();
+                        });
+                      }
+                      // sort the list by job count
+                      fullyMatchedWorkerList
+                          .sort((a, b) => a.item2.compareTo(b.item2));
+                      //print(fullyMatchedWorkerLis);
+                      List<String> orderedWorkers = fullyMatchedWorkerList
+                          .map((tuple) => tuple.item1)
+                          .toList();
+                      setState(() {
                         getList(orderedWorkers);
-                        print(orderedWorkers);
                       });
+                      print("workers");
+                      print(orderedWorkers);
                     }
                   });
                 }
@@ -306,11 +317,52 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
         if (data != null) {
-          count = data.length;
+          data.forEach((key, value) {
+            if (value['worker_job_complete'] == false) {
+              count++;
+            }
+          });
         }
       }
     });
     return count;
+  }
+
+  Future<void> deleteJobDb(String jobId) async {
+    dbhandler
+        .child('Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var jobKey = data.keys.first;
+          dbhandler.child('Jobs').child(jobKey).remove();
+        }
+      }
+    });
+    dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var jobKey = data.keys.first;
+          dbhandler.child('Assigned Jobs').child(jobKey).remove();
+        }
+      }
+    });
   }
 
   Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
@@ -358,72 +410,116 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const DisplayText(
-                  text: "List of Availiable Workers",
-                  fontSize: 30,
-                  colour: Colors.black),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.5,
-                width: MediaQuery.of(context).size.width * 0.9,
-                child: ListView.builder(
-                  itemCount: workerList.length,
-                  itemBuilder: (context, index) {
-                    // Assuming each worker is represented as a Map
-                    String worker = workerList[index];
-
-                    return InkWell(
-                      onTap: () async {
-                        print('Clicked on worker: $worker');
-                        addAssignJobDb(
-                            widget.jobId, widget.companyId, worker, context);
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => CompanyNavigationBar(
-                                    companyId: widget.companyId)));
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.all(5), // between items
-                        padding:
-                            const EdgeInsets.all(10), // space inside item box
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.deepPurple),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ListTile(
-                          title: DisplayText(
-                              text: "worker: $index",
-                              fontSize: 24,
-                              colour: Colors.black),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 100),
-              PushButton(
-                  buttonSize: 60,
-                  text: "Go Back",
-                  onPress: () async {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => CompanyNavigationBar(
-                                companyId: widget.companyId)));
-                  }),
-            ],
+    if (workerList.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const DisplayText(
+                    text: "No Workers Available",
+                    fontSize: 30,
+                    colour: Colors.black),
+                const SizedBox(height: 10),
+                PushButton(
+                    buttonSize: 60,
+                    text: "Keep Job",
+                    onPress: () async {
+                      addAssignJobDb(
+                          widget.jobId, widget.companyId, 'none', context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => CompanyNavigationBar(
+                                  companyId: widget.companyId)));
+                    }),
+                const SizedBox(height: 50),
+                PushButton(
+                    buttonSize: 60,
+                    text: "Delete Job",
+                    onPress: () async {
+                      await deleteJobDb(widget.jobId);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => CompanyNavigationBar(
+                                  companyId: widget.companyId)));
+                    }),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const DisplayText(
+                    text: "List of Available Workers",
+                    fontSize: 30,
+                    colour: Colors.black),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  child: ListView.builder(
+                    itemCount: workerList.length,
+                    itemBuilder: (context, index) {
+                      // Assuming each worker is represented as a Map
+                      String worker = workerList[index];
+                      return InkWell(
+                        onTap: () async {
+                          //print('Clicked on worker: $worker');
+                          addAssignJobDb(
+                              widget.jobId, widget.companyId, worker, context);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => CompanyNavigationBar(
+                                      companyId: widget.companyId)));
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.all(5), // between items
+                          padding:
+                              const EdgeInsets.all(10), // space inside item box
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.deepPurple),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ListTile(
+                            title: DisplayText(
+                                text: "worker: $index",
+                                fontSize: 24,
+                                colour: Colors.black),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 100),
+                PushButton(
+                    buttonSize: 60,
+                    text: "Go Back",
+                    onPress: () async {
+                      await deleteJobDb(widget.jobId);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => CompanyNavigationBar(
+                                  companyId: widget.companyId)));
+                    }),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
   }
 }

@@ -95,66 +95,66 @@ class WorkerSettingsState extends State<WorkerSettings> {
   }
 
   Future<void> genderChanger(BuildContext context, String value) async {
-  String dropdownValue = value;
+    String dropdownValue = value;
 
-  // Dropdown items
-  List<String> dropdownItems = [
-    'default',
-    'male',
-    'female',
-    'non-binary',
-  ];
+    // Dropdown items
+    List<String> dropdownItems = [
+      'default',
+      'male',
+      'female',
+      'non-binary',
+    ];
 
-  showDialog<void>(
-    context: context,
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) {
-          return AlertDialog(
-            title: const Text("Change Selected Gender"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButton<String>(
-                  value: dropdownValue,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      dropdownValue = newValue!;
-                    });
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text("Change Selected Gender"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButton<String>(
+                    value: dropdownValue,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        dropdownValue = newValue!;
+                      });
+                    },
+                    items: dropdownItems
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
                   },
-                  items: dropdownItems.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+                  child: const Text('Back'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // Call updateProfile function with the selected value
+                    await updateProfile("img", dropdownValue);
+
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Change'),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Back'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  // Call updateProfile function with the selected value
-                  await updateProfile("img", dropdownValue);
-
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Change'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
-
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<void> profileChanger(
       BuildContext context, String title, String item, dynamic value) async {
@@ -196,6 +196,169 @@ class WorkerSettingsState extends State<WorkerSettings> {
     );
   }
 
+  Future<void> deleteWorker(String workerId) async {
+    dbhandler
+        .child('Worker')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var workerKey = data.keys.first;
+          dbhandler.child('Worker').child(workerKey).remove();
+        }
+      }
+    });
+    dbhandler
+        .child('Availability')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var workerKey = data.keys.first;
+          dbhandler.child('Availability').child(workerKey).remove();
+        }
+      }
+    });
+    dbhandler
+        .child('Ability')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var workerKey = data.keys.first;
+          dbhandler.child('Ability').child(workerKey).remove();
+        }
+      }
+    });
+    dbhandler
+        .child('Profiles')
+        .orderByChild('user_id')
+        .equalTo(workerId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          // Assuming there is only one entry, you can access it directly
+          var workerKey = data.keys.first;
+          dbhandler.child('Profile').child(workerKey).remove();
+        }
+      }
+    });
+  }
+
+  // Future<void> unassignJobs(String workerId) async {
+  //   List<String> jobIdList = [];
+  //   dbhandler
+  //       .child('Assigned Jobs')
+  //       .orderByChild('worker_id')
+  //       .equalTo(workerId)
+  //       .onValue
+  //       .listen((DatabaseEvent event) async {
+  //     if (event.snapshot.value != null) {
+  //       Map<dynamic, dynamic>? data =
+  //           event.snapshot.value as Map<dynamic, dynamic>?;
+  //       if (data != null) {
+  //         data.forEach((key, value) {
+  //           String jobId = value['job_id'];
+  //           jobIdList.add(jobId);
+  //         });
+  //       }
+  //     }
+  //   });
+  //   for (String jobId in jobIdList) {
+  //     dbhandler
+  //         .child('Assigned Jobs')
+  //         .orderByChild('job_id')
+  //         .equalTo(jobId)
+  //         .once()
+  //         .then((event) async {
+  //       if (event.snapshot.value != null) {
+  //         Map<dynamic, dynamic>? data =
+  //             event.snapshot.value as Map<dynamic, dynamic>?;
+
+  //         if (data != null) {
+  //           // Assuming there is only one entry, you can access it directly
+  //           var assignedJobKey = data.keys.first;
+  //           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
+  //             'worker_id': "none",
+  //             'worker_accepted': false,
+  //           });
+  //         }
+  //       }
+  //     });
+  //   }
+  // }
+
+  Future<void> unassignJobs(String workerId) async {
+    List<String> jobIdList = [];
+
+    await dbhandler
+        .child('Assigned Jobs')
+        .orderByChild('worker_id')
+        .equalTo(workerId)
+        .once()
+        .then((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          data.forEach((key, value) {
+            String jobId = value['job_id'];
+            jobIdList.add(jobId);
+          });
+        }
+      }
+    });
+
+    for (String jobId in jobIdList) {
+      await dbhandler
+          .child('Assigned Jobs')
+          .orderByChild('job_id')
+          .equalTo(jobId)
+          .once()
+          .then((event) async {
+        if (event.snapshot.value != null) {
+          Map<dynamic, dynamic>? data =
+              event.snapshot.value as Map<dynamic, dynamic>?;
+
+          if (data != null) {
+            data.forEach((key, value) async {
+              var assignedJobKey = key;
+              await dbhandler
+                  .child('Assigned Jobs')
+                  .child(assignedJobKey)
+                  .update({
+                'worker_id': "none",
+                'worker_accepted': false,
+              });
+            });
+          }
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -223,7 +386,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
               const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70,
-                  text: "Change Expeience",
+                  text: "Change Experience",
                   onPress: () => profileChanger(context, "Years of Experience",
                       "experience", experience.toString())),
               const SizedBox(height: 20),
@@ -233,9 +396,20 @@ class WorkerSettingsState extends State<WorkerSettings> {
                   onPress: () => profileChanger(context, "About you summary",
                       "description", description)),
               const SizedBox(height: 20),
-              // PushButton(
-              //     buttonSize: 70, text: "Delete Account", onPress: () => null),
-              // const SizedBox(height: 20),
+              PushButton(
+                buttonSize: 70,
+                text: "Delete Account",
+                onPress: () async => {
+                  setState(() {
+                    unassignJobs(widget.workerId);
+                    deleteWorker(widget.workerId);
+                  }),
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => const Login())),
+                  //sign out
+                },
+              ),
+              const SizedBox(height: 20),
               PushButton(
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
               const SizedBox(height: 20),
