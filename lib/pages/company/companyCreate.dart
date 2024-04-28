@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyWorkerList.dart';
 import 'package:fyp/templates/dateTimeText.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/helpBut.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
@@ -360,142 +361,159 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
         automaticallyImplyLeading: false, // Remove the back button
       ),
       body: Center(
-            child: SingleChildScrollView(
-                child: Column(
+        child: SingleChildScrollView(
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 25),
+                const DisplayText(
+                    text: 'Select Date of the Job',
+                    fontSize: 30,
+                    colour: Color(0xFF280387)),
+                const SizedBox(height: 10),
+                Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-            const DisplayText(
-                text: 'Select Date of the Job',
-                fontSize: 30,
-                colour: Color(0xFF280387)),
-            const SizedBox(height: 15),
-            Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const DisplayText(
-                      text: 'Date: ', fontSize: 30, colour: Colors.black),
-                  DateTimeText(
-                    text: dateString,
-                    icon: const Icon(Icons.date_range_outlined),
-                    onPress: () => _dateSelector(context),
+                      const DisplayText(
+                          text: 'Date: ', fontSize: 30, colour: Colors.black),
+                      DateTimeText(
+                        text: dateString,
+                        icon: const Icon(Icons.date_range_outlined),
+                        onPress: () => _dateSelector(context),
+                      ),
+                    ]),
+                const SizedBox(height: 25),
+                PushButton(
+                    buttonSize: 60,
+                    text: "Select Abilities",
+                    onPress: () => abilitySelector(context, selections)),
+                const SizedBox(height: 25),
+                const DisplayText(
+                    text: 'Select Time of the Job',
+                    fontSize: 30,
+                    colour: Color(0xFF280387)),
+                const SizedBox(height: 10),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const DisplayText(
+                          text: 'Start:', fontSize: 30, colour: Colors.black),
+                      DateTimeText(
+                          text: startTime.format(context),
+                          icon: const Icon(Icons.update_outlined),
+                          onPress: () =>
+                              _timeSelector(context, startTime.format(context),
+                                  (currentTime) {
+                                setState(() {
+                                  startTime = currentTime;
+                                });
+                              }))
+                    ]),
+                const SizedBox(height: 20),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const DisplayText(
+                          text: ' End: ', fontSize: 30, colour: Colors.black),
+                      DateTimeText(
+                        text: endTime.format(context),
+                        icon: const Icon(Icons.history_outlined),
+                        onPress: () => _timeSelector(
+                            context, endTime.format(context), (currentTime) {
+                          setState(() {
+                            endTime = currentTime;
+                          });
+                        }),
+                      ),
+                    ]),
+                const SizedBox(height: 20),
+                const DisplayText(
+                    text: 'Select the Job Location',
+                    fontSize: 30,
+                    colour: Color(0xFF280387)),
+                SizedBox(
+                  width: 350,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: DateTimeText(
+                      text: currentLocation,
+                      icon: const Icon(Icons.map_outlined),
+                      onPress: () async {
+                        await locationSelector(context);
+                        String location = await getLocationCoordinates(context);
+                        setState(() {
+                          currentLocation = location;
+                          if (currentLocation.isEmpty) {
+                            currentLocation = "Get Location";
+                          }
+                        });
+                      },
+                    ),
                   ),
-                ]),
-            const SizedBox(height: 30),
-            PushButton(
-                buttonSize: 55,
-                text: "Select Abilities",
-                onPress: () => abilitySelector(context, selections)),
-            const SizedBox(height: 30),
-            const DisplayText(
-                text: 'Select Time of the Job',
-                fontSize: 30,
-                colour: Color(0xFF280387)),
-            const SizedBox(height: 15),
-            Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const DisplayText(
-                      text: 'Start:', fontSize: 30, colour: Colors.black),
-                  DateTimeText(
-                      text: startTime.format(context),
-                      icon: const Icon(Icons.update_outlined),
-                      onPress: () =>
-                          _timeSelector(context, startTime.format(context),
-                              (currentTime) {
-                            setState(() {
-                              startTime = currentTime;
-                            });
-                          }))
-                ]),
-            const SizedBox(height: 20),
-            Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const DisplayText(
-                      text: ' End: ', fontSize: 30, colour: Colors.black),
-                  DateTimeText(
-                    text: endTime.format(context),
-                    icon: const Icon(Icons.history_outlined),
-                    onPress: () => _timeSelector(
-                        context, endTime.format(context), (currentTime) {
-                      setState(() {
-                        endTime = currentTime;
+                ),
+                const SizedBox(height: 30),
+                PushButton(
+                  buttonSize: 70,
+                  text: 'Create Job',
+                  onPress: () async {
+                    int timeDif = stringTimeToMins(endTime.format(context)) -
+                        stringTimeToMins(startTime.format(context));
+                    if (lat == 0.0 || long == 0.0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter a valid location'),
+                        ),
+                      );
+                    } else if (timeDif < 29) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Please make sure the job ends at least 30 minutes after it starts'),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Job Created Successfully'),
+                        ),
+                      );
+                      addJobDb(dateString, companyId, startTime, endTime, lat,
+                          long, context, (value) {
+                        setState(() {
+                          jobId = value;
+                          print("check here");
+                          print(jobId);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => CompanyWorkerList(
+                                      companyId: widget.companyId,
+                                      jobId: jobId,
+                                      abilityList: selectedAbilitys)));
+                        });
                       });
-                    }),
-                  ),
-                ]),
-            const SizedBox(height: 30),
-            const DisplayText(
-                text: 'Select the Job Location',
-                fontSize: 30,
-                colour: Color(0xFF280387)),
-            Padding(
-              padding: const EdgeInsets.all(15),
-              child: DateTimeText(
-                text: currentLocation,
-                icon: const Icon(Icons.map_outlined),
-                onPress: () async {
-                  await locationSelector(context);
-                  String location = await getLocationCoordinates(context);
-                  setState(() {
-                    currentLocation = location;
-                    if (currentLocation.isEmpty) {
-                      currentLocation = "Get Location";
                     }
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 30),
-            PushButton(
-              buttonSize: 70,
-              text: 'Create Job',
-              onPress: () async {
-                int timeDif = stringTimeToMins(endTime.format(context)) -
-                    stringTimeToMins(startTime.format(context));
-                if (lat == 0.0 || long == 0.0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a valid location'),
-                    ),
-                  );
-                } else if (timeDif < 29) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'Please make sure the job ends at least 30 minutes after it starts'),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Job Created Successfully'),
-                    ),
-                  );
-                  addJobDb(dateString, companyId, startTime, endTime, lat, long,
-                      context, (value) {
-                    setState(() {
-                      jobId = value;
-                      print("check here");
-                      print(jobId);
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => CompanyWorkerList(
-                                  companyId: widget.companyId,
-                                  jobId: jobId,
-                                  abilityList: selectedAbilitys)));
-                    });
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 30),
-          ]),
+                  },
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  alignment: Alignment.centerRight,
+                  margin: const EdgeInsets.only(top: 20, right: 30),
+                  child: const HelpButton(
+                      message:
+                          'Choose the job date by clicking the calendar icon\n\n'
+                          'Using the ability button select the required abilities \n\n'
+                          'Select the job start and end time by clicking the clock icons.\n\n'
+                          'Select the location by clicking the location button and searching for where the job is.\n\n'
+                          'Click the Create Job button when you\'re done.',
+                      title: "Job Creation"),
+                ),
+                const SizedBox(height: 25),
+              ]),
         ),
       ),
     );

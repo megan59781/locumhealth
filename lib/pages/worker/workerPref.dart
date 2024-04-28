@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fyp/templates/dayBut.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/helpBut.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter/material.dart';
@@ -751,7 +752,7 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   await adjustAvailableDb(
                       2, workerId, tueStartTime, tueEndTime, selTue, context);
 
-                 await adjustAvailableDb(
+                  await adjustAvailableDb(
                       3, workerId, wedStartTime, wedEndTime, selWed, context);
 
                   await adjustAvailableDb(
@@ -771,7 +772,18 @@ class WorkerPreferenceState extends State<WorkerPreference> {
                   ));
                 },
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 15),
+              Container(
+                alignment: Alignment.centerRight,
+                margin: const EdgeInsets.only(top: 20, right: 30),
+                child: const HelpButton(
+                    message:
+                        'Click the on the days to put the time your avaible for job requets \n\n'
+                        'Using the location button to change your location \n\n'
+                        'To alter the maximum miles you\'d travel, click the Miles button \n\n'
+                        'Click the Submit Preferences button when you\'re done to save',
+                    title: "Availability"),
+              ),
             ],
           ),
         ),

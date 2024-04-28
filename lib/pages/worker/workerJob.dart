@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/helpBut.dart';
 import 'package:fyp/templates/profileView.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:geocoding/geocoding.dart';
@@ -385,7 +387,17 @@ class WorkerJobState extends State<WorkerJob> {
               onPressed: () async {
                 await confirmJob(jobId);
                 await deleteRiskSupport(jobId);
+                getJobs(widget.workerId, (List<dynamic> jobDetailList) {
+                  setState(() {
+                    jobList = jobDetailList;
+                  });
+                });
                 Navigator.of(context).pop();
+                Flushbar(
+                  backgroundColor: Colors.black,
+                  message: "Job Confirmed!",
+                  duration: Duration(seconds: 4),
+                ).show(context);
               },
               child: const Text('Yes'),
             ),
@@ -646,10 +658,10 @@ class WorkerJobState extends State<WorkerJob> {
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  width: MediaQuery.of(context).size.width * 0.9,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 40),
+                Expanded(
                   child: ListView.builder(
                     itemCount: jobList.length,
                     itemBuilder: (context, index) {
@@ -664,7 +676,7 @@ class WorkerJobState extends State<WorkerJob> {
                           profileViewer(context, job['companyId']);
                         },
                         child: Container(
-                          margin: const EdgeInsets.all(5), // between items
+                          margin: const EdgeInsets.all(20), // between items
                           padding:
                               const EdgeInsets.all(10), // space inside item box
                           decoration: BoxDecoration(
@@ -691,6 +703,18 @@ class WorkerJobState extends State<WorkerJob> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                Container(
+                  alignment: Alignment.centerRight,
+                  margin: const EdgeInsets.only(top: 20, right: 30),
+                  child: const HelpButton(
+                      message: 'Job colour meaning; \n'
+                          '- Red: new job request, click to accept \n'
+                          '- Blue: waiting for the company to add risk and support plans \n'
+                          '- Green: click to view risk and support plans, once the job is completed click to confirm \n\n'
+                          'Double tap on the job to view the company profile.',
+                      title: "Job Viewer"),
+                ),
+                const SizedBox(height: 30),
               ],
             ),
           ),

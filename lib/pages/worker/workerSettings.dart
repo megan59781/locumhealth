@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fyp/pages/login.dart';
 import 'package:fyp/templates/displayText.dart';
+import 'package:fyp/templates/helpBut.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -343,6 +344,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+              const SizedBox(height: 55),
               PushButton(
                   buttonSize: 70,
                   text: "Change Name",
@@ -383,7 +385,18 @@ class WorkerSettingsState extends State<WorkerSettings> {
               const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
+              // const SizedBox(height: 25),
               const SizedBox(height: 25),
+              Container(
+                alignment: Alignment.centerRight,
+                margin: const EdgeInsets.only(top: 20, right: 30),
+                child: const HelpButton(
+                    message:
+                        'Select a button to change your profile\n\n'
+                        'To remove your account click Delete Account \n\n'
+                        'Click the Sign Out button to log out of your account',
+                    title: "Settings"),
+              ),
             ]))));
   }
 }
