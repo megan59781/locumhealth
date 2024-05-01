@@ -416,9 +416,7 @@ class CompanyJobState extends State<CompanyJob> {
                   ).show(context);
                   await addRiskSupportDb(jobId);
                   await subitRiskSupport(jobId);
-
-                  // addRiskSupportDb(jobId);
-                  // subitRiskSupport(jobId);
+                  Navigator.of(context).pop();
                 } else {
                   Flushbar(
                     backgroundColor: Colors.black,
