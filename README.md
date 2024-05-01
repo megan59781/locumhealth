@@ -1,4 +1,4 @@
-# 2061391 FYP 
+# Locum Healthcare - FYP 2061391
 
 Flutter gig economy application that proposes a potential solution to the current UK healthcare staff shortage crisis. Connects connecting healthcare companies hiring for specific understaffed jobs directly to healthcare workers wanting overtime that fits around their life. 
 
