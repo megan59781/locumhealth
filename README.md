@@ -28,10 +28,10 @@ Flutter gig economy application that proposes a potential solution to the curren
 To run this application locally, follow these steps:
 
 ### Prerequisites
-- Flutter SDK installed (version X.X.X)
+- Flutter SDK installed
 - Android Studio / Visual Studio Code with Flutter extension
 - Android Device or Android Emulator
-- 
+- Android toolchain
 ### Installation
 
 1. Clone this repository
