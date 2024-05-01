@@ -3,11 +3,26 @@
 Flutter gig economy application that proposes a potential solution to the current UK healthcare staff shortage crisis. Connects connecting healthcare companies hiring for specific understaffed jobs directly to healthcare workers wanting overtime that fits around their life. 
 
 ## Features
-- Feature 1
-  - Description of feature 1.
-- Feature 2
-  - Description of feature 2.
-- ...
+- Firebase Real-time Database
+  - Authentication
+  - Storage
+
+- Login/Register Page
+
+- Worker Navigation Bar
+  - Job Management Page: Accept Jobs, Manage current and future job details, View risk assessments/support plans, View Companies
+  - Availability Selection Page: Select days, times, and miles available to travel
+  - Ability Selection Page: Select abilities trained to do
+  - Profile Page: Create profile for companies to view
+  - Settings Page: Control account, Edit Profile, Sign-out
+
+- Company Navigation Bar
+  - Job Management Page: Delete Jobs, Manage current and future job details, Add risk assessments/support plans, View Workers
+  - Job Creation Page: Specify job details to create a job and select matched workers
+  - Profile Page: Create profile for workers to view
+  - Settings Page: Control account, Edit Profile, Sign-out
+
+
 ## Getting Started
 
 To run this application locally, follow these steps:
@@ -15,7 +30,7 @@ To run this application locally, follow these steps:
 ### Prerequisites
 - Flutter SDK installed (version X.X.X)
 - Android Studio / Visual Studio Code with Flutter extension
-- Android Device or 
+- Android Device or Android Emulator
 - 
 ### Installation
 
