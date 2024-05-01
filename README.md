@@ -3,16 +3,34 @@
 Flutter gig economy application that proposes a potential solution to the current UK healthcare staff shortage crisis. Connects connecting healthcare companies hiring for specific understaffed jobs directly to healthcare workers wanting overtime that fits around their life. 
 
 ## Features
-
+- Feature 1
+  - Description of feature 1.
+- Feature 2
+  - Description of feature 2.
+- ...
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+To run this application locally, follow these steps:
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites
+- Flutter SDK installed (version X.X.X)
+- Android Studio / Visual Studio Code with Flutter extension
+- Android Device or 
+- 
+### Installation
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. Clone this repository
+   ```bash
+   git clone https://github.com/unimegan59781/fyp2061391.git
+2. Install dependancies
+   ```bash
+   flutter pub get
+3. Run the app on a emulator or android device
+   ```bash
+   flutter run
+4. Enable Location Permissions
+(Make sure to enable location permissions on the device where you will run the app)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For Android devices/Emulator:
+- Open Settings > Apps > MyApp > Permissions.
+- Enable the Location permission.
