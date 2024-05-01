@@ -1,6 +1,8 @@
-# fyp
+# 2061391 FYP 
 
-A new Flutter project.
+Flutter gig economy application that proposes a potential solution to the current UK healthcare staff shortage crisis. Connects connecting healthcare companies hiring for specific understaffed jobs directly to healthcare workers wanting overtime that fits around their life. 
+
+## Features
 
 ## Getting Started
 
