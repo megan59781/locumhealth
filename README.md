@@ -49,3 +49,15 @@ To run this application locally, follow these steps:
 For Android devices/Emulator:
 - Open Settings > Apps > MyApp > Permissions.
 - Enable the Location permission.
+
+## Screenshots
+
+![Example Image](screenshots/shot1.png)
+
+![Example Image](screenshots/shot2.png)
+
+![Example Image](screenshots/shot3.png)
+
+![Example Image](screenshots/shot4.png)
+
+![Example Image](screenshots/shot5.png)
