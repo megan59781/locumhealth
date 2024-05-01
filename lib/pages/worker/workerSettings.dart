@@ -391,8 +391,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
                 alignment: Alignment.centerRight,
                 margin: const EdgeInsets.only(top: 20, right: 30),
                 child: const HelpButton(
-                    message:
-                        'Select a button to change your profile\n\n'
+                    message: 'Select a button to change your profile\n\n'
                         'To remove your account click Delete Account \n\n'
                         'Click the Sign Out button to log out of your account',
                     title: "Settings"),
