@@ -51,13 +51,17 @@ For Android devices/Emulator:
 - Enable the Location permission.
 
 ## Screenshots
-
+Login Screen to Company Side of the App
 ![Example Image](screenshots/shot1.png)
 
+Company Creates a Job and Selects a Worker
 ![Example Image](screenshots/shot2.png)
 
+Company View Jobs, Adds Risk Assesments and Support Plans
 ![Example Image](screenshots/shot3.png)
 
+Worker Side of App, Creates there Avaibility, Change Location and Miles to travel
 ![Example Image](screenshots/shot4.png)
 
+Worker can Manage Jobs, Alter Profile and Pic their abilities
 ![Example Image](screenshots/shot5.png)
