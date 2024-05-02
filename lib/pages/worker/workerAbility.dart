@@ -58,6 +58,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
+        .take(1)
         .listen((event) async {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =

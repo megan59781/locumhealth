@@ -436,7 +436,7 @@ class CompanyJobState extends State<CompanyJob> {
                     backgroundColor: Colors.black,
                     message:
                         "Risk and Support Plans Added, this may take a second!",
-                    duration: const Duration(seconds: 4),
+                    duration: const Duration(seconds: 10),
                   ).show(context);
                   await addRiskSupportDb(
                       jobId); // add the risk and support plans to the database
@@ -452,7 +452,6 @@ class CompanyJobState extends State<CompanyJob> {
                     duration: const Duration(seconds: 4),
                   ).show(context);
                 }
-                Navigator.of(context).pop();
               },
               child: const Text('Submit'),
             ),

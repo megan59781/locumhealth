@@ -276,6 +276,22 @@ class CompanySettingsState extends State<CompanySettings> {
           }
         }
       });
+      dbhandler // remove the jobs risk assessments and support plans
+          .child('Risk Support Plans')
+          .orderByChild('job_id')
+          .equalTo(jobId)
+          .onValue
+          .take(1)
+          .listen((event) async {
+        if (event.snapshot.value != null) {
+          Map<dynamic, dynamic>? data =
+              event.snapshot.value as Map<dynamic, dynamic>?;
+          if (data != null) {
+            var jobKey = data.keys.first;
+            dbhandler.child('Risk Support Plans').child(jobKey).remove();
+          }
+        }
+      });
     }
   }
 
@@ -358,19 +374,23 @@ class CompanySettingsState extends State<CompanySettings> {
               PushButton(
                   buttonSize: 70,
                   text: "Delete Account",
-                  onPress: () => {
+                  onPress: () async => {
                         // delete the account and all associated jobs and data
-                        deleteJobs(widget.companyId),
-                        deleteCompany(widget.companyId),
-                      }),
+                        await deleteJobs(widget.companyId),
+                        await deleteCompany(widget.companyId),
+                        await signOut()}), // remove associated google account
               const SizedBox(height: 25),
-              PushButton( // sign out of the account
-                  buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
+              PushButton(
+                  // sign out of the account
+                  buttonSize: 70,
+                  text: "Sign Out",
+                  onPress: () => signOut()),
               const SizedBox(height: 75),
               Container(
                 alignment: Alignment.centerRight,
                 margin: const EdgeInsets.only(top: 20, right: 30),
-                child: const HelpButton( // help button for user how to use page
+                child: const HelpButton(
+                    // help button for user how to use page
                     message: 'Select a button to change your profile\n\n'
                         'To remove your account click Delete Account \n\n'
                         'Click the Sign Out button to log out of your account',
