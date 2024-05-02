@@ -266,9 +266,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                       List<String> orderedWorkers = fullyMatchedWorkerList
                           .map((tuple) => tuple.item1)
                           .toList();
-                      setState(() {
-                        getList(orderedWorkers); // return the list of workers
-                      });
+                       await getList(orderedWorkers); // return the list of workers
                     }
                   });
                 }

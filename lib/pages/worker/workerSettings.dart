@@ -278,7 +278,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
         if (data != null) {
           // Assuming there is only one entry, you can access it directly
           var workerKey = data.keys.first;
-          dbhandler.child('Profile').child(workerKey).remove();
+          dbhandler.child('Profiles').child(workerKey).remove();
         }
       }
     });
@@ -390,21 +390,21 @@ class WorkerSettingsState extends State<WorkerSettings> {
                     await unassignJobs(widget.workerId);
                     await deleteWorker(widget.workerId);
                   }),
-                  // await _auth.signOut().then((_) { // sign out
-                  //   _googleSignIn.signOut();
-                  // }),
-                  Navigator.push(context, // navigate to login
-                      MaterialPageRoute(builder: (context) => const Login())),
+                  await signOut(), // remove associated google login account
                 },
               ),
               const SizedBox(height: 25),
-              PushButton( // sign out button
-                  buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
+              PushButton(
+                  // sign out button
+                  buttonSize: 70,
+                  text: "Sign Out",
+                  onPress: () => signOut()),
               const SizedBox(height: 25),
               Container(
                 alignment: Alignment.centerRight,
                 margin: const EdgeInsets.only(top: 20, right: 30),
-                child: const HelpButton( // help button for settings
+                child: const HelpButton(
+                    // help button for settings
                     message: 'Select a button to change your profile\n\n'
                         'To remove your account click Delete Account \n\n'
                         'Click the Sign Out button to log out of your account',
