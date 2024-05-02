@@ -5,28 +5,26 @@ import 'package:fyp/pages/login.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(); // Initialize Firebase when app started
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setPreferredOrientations([
+    SystemChrome.setPreferredOrientations([ // stops roation of the app
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
     return MaterialApp(
-      title: 'Locum Health',
-      theme: ThemeData(
+      title: 'Locum Health', // Title of the app
+      theme: ThemeData( // Theme of the app which is deepPurple
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      debugShowCheckedModeBanner: false,
-      home: const Login(),
+      debugShowCheckedModeBanner: false, // Removes the debug banner
+      home: const Login(), // The first page of the app is login
     );
   }
 }

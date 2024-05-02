@@ -15,6 +15,7 @@ class CompanyProfile extends StatefulWidget {
 
 class CompanyProfileState extends State<CompanyProfile> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
+  // set for default company profile
   String name = "Company Name";
   String imgPath = "general care";
   String description = "No Description";
@@ -22,12 +23,13 @@ class CompanyProfileState extends State<CompanyProfile> {
   @override
   void initState() {
     super.initState();
-    setState(() {
+    setState(() { // Set the state of the variables from database
       getProfile(widget.companyId);
     });
   }
 
-  void getProfile(String userId) async {
+  // Function to get the company profile from the database
+  void getProfile(String userId) async { // pass company id
     await dbhandler
         .child('Profiles')
         .orderByChild('user_id')
@@ -58,7 +60,7 @@ class CompanyProfileState extends State<CompanyProfile> {
         appBar: AppBar(
           backgroundColor: const Color(0xffFCFAFC),
           title: const Padding(
-            padding: EdgeInsets.only(top: 15), // Add padding above the title
+            padding: EdgeInsets.only(top: 15), 
             child: Center(
               child: DisplayText(
                   text: 'Company Profile', fontSize: 36, colour: Colors.black),
@@ -72,23 +74,22 @@ class CompanyProfileState extends State<CompanyProfile> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
               const SizedBox(height: 30),
-              ProfileView(
+              ProfileView( // Display the company profile
                   name: name,
                   imgPath: imgPath,
                   experience: "",
                   description: description,
-                  scale: 1),
+                  scale: 1), // 1 for default scale
               const SizedBox(height: 40),
               TextButton(
-                onPressed: () {
-                  // Action to perform when the button is pressed
+                onPressed: () { // Navigate to the settings page from text
                   Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) =>
                               CompanyNavigationBar(companyId: widget.companyId, setIndex: 3)));
                 },
-                child: const DisplayText(
+                child: const DisplayText( // Text to navigate to settings
                     text: "To edit the profile go to settings",
                     fontSize: 18,
                     colour: Colors.deepPurple),

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 
-class DateTimeText extends StatelessWidget {
+// template for the date and time text in companycreatejob page
+class DateTimeText extends StatelessWidget { 
   final String text;
   final Function()? onPress;
   final Icon icon;
 
   const DateTimeText({
     super.key,
-    required this.text,
-    required this.onPress,
-    required this.icon,
+    required this.text, // pass text of the date/time/location
+    required this.onPress, // pass function
+    required this.icon, // pass icon e.g clock/calendar
   });
 
   @override
@@ -17,7 +18,6 @@ class DateTimeText extends StatelessWidget {
     return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10.0),
         decoration: BoxDecoration(
-          //border: Border.all(color: Colors.blueGrey[300]!, width: 1),
           borderRadius: BorderRadius.circular(60.0),
           color: Colors.blueGrey[50],
           boxShadow: [
@@ -25,7 +25,7 @@ class DateTimeText extends StatelessWidget {
               color: Colors.blueGrey[300]!.withOpacity(0.5), // Shadow color
               spreadRadius: 2,
               blurRadius: 0,
-              offset: Offset(0, 0), // changes position of shadow
+              offset: const Offset(0, 0), 
             ),
           ],
         ),

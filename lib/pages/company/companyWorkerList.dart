@@ -1,11 +1,10 @@
-import 'dart:math' show cos, sqrt, asin;
+import 'dart:math' show cos, sqrt, asin; // for harvesian formula
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp/pages/company/companyNav.dart';
 import 'package:fyp/templates/displayText.dart';
 import 'package:fyp/templates/pushBut.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 import 'package:tuple/tuple.dart';
 
 class CompanyWorkerList extends StatefulWidget {
@@ -28,9 +27,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
   @override
   void initState() {
+    // get the list of available workers when the page is loaded
     super.initState();
-    print("this is where job is passed");
-    print(widget.jobId);
     setState(() {
       getAvailablWorkers(widget.jobId, (List<dynamic> matchedWorkerList) {
         setState(() {
@@ -62,6 +60,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     return haversine(lat1, lon1, lat2, lon2);
   }
 
+  // list of declined workers for passed job
   List<String> getDeclinedWorkers(String jobId) {
     List<String> declinedWorkers = [];
     dbhandler
@@ -74,54 +73,48 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
         if (data != null) {
-          // Assuming there is only one entry, you can access it directly
           var declinedKey = data.keys.first;
           var declinedData = data[declinedKey];
           declinedData.forEach((key, value) {
             if (key != 'job_id') {
+              // get all worker ids that declined the job
               declinedWorkers.add(value);
             }
           });
-          print("HERE Worker LIST: $declinedWorkers");
         }
       }
     });
-    return declinedWorkers;
+    return declinedWorkers; // return to getAvailablWorkers function
   }
 
+  // worker matching algorithmn for all workers that match the job
+  // pass job id and function to get list of workers
   void getAvailablWorkers(
       String jobId, Function(List<String> workerList) getList) {
-    print("Print this function is being passed");
-    print(jobId);
-
-    dbhandler
+    dbhandler // get job details
         .child('Jobs')
         .orderByChild('job_id')
         .equalTo(jobId)
         .onValue
         .listen((event) {
-      print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
-
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
-
         if (data != null) {
           // Assuming there's only one item in the snapshot (you are querying by jobId)
           var jobKey = data.keys.first;
           var jobData = data[jobKey];
 
           var dateString = jobData['date'];
-          // var companyId = jobData['company_id'];
           var jobStartTime = jobData['job_start_time'];
           var jobEndTime = jobData['job_end_time'];
-          // var jobId = jobData['job_id'];
           double jobLat = jobData['latitude'];
           double jobLong = jobData['longitude'];
 
+          // formate the date to get the day
           DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
-          String day = DateFormat('EEEE').format(date);
-          //print('day');
+          String day = DateFormat('EEEE').format(date); // get day of the week
+          // get day the date is on to compare with worker availability
           int dayId = 0;
           if (day == 'Monday') {
             dayId = 1;
@@ -138,18 +131,12 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
           } else if (day == 'Sunday') {
             dayId = 7;
           } else {
-            // error
-            print('Invalid day');
+            // error invalid date
           }
 
-          // print("MEGAN IT WORKS");
-          // print("Job ID: $jobId");
-          // print(dateString);
-          // print("Company ID: $companyId");
-          // print("Day Start Time: $dayStartTime");
-          // print("Day End Time: $dayEndTime");
+          // get list of declined workers for the job
           List<String> declinedWorkers = getDeclinedWorkers(jobId);
-          print("HERE declined Worker LIST: $declinedWorkers");
+          // filter all workers that are available on the day
           dbhandler
               .child('Availability')
               .orderByChild('day_id')
@@ -157,51 +144,49 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
               .onValue
               .listen((DatabaseEvent event) {
             if (event.snapshot.value != null) {
-              // Explicitly cast to Map<dynamic, dynamic>
               Map<dynamic, dynamic>? data =
                   event.snapshot.value as Map<dynamic, dynamic>?;
 
               if (data != null) {
-                // Convert the Map<dynamic, dynamic> to a List
-                List<String> availWorkerList = [];
+                List<String> availWorkerList =
+                    []; // empty list to add available workers
+
                 data.forEach((key, value) {
-                  int availStartTime =
-                      stringTimeToMins(value['day_start_time']);
-                  int availEndTime = stringTimeToMins(value['day_end_time']);
+                  // loop through all workers availble on the day
+                  int availStartTime = stringTimeToMins(
+                      value['day_start_time']); // get worker start time
+                  int availEndTime = stringTimeToMins(
+                      value['day_end_time']); // get worker end time
 
                   if ((availStartTime <= stringTimeToMins(jobStartTime)) &&
                       (availEndTime >= stringTimeToMins(jobEndTime))) {
+                    // check if worker start on or before job and if end on or after job
                     String workerId = value['worker_id'];
                     // Check if worker has declined the job
                     if (declinedWorkers.contains(workerId)) {
-                      print('Worker $workerId has declined the job');
+                      // Worker has declined the job
                     } else {
-                      availWorkerList.add(workerId);
+                      availWorkerList
+                          .add(workerId); // add worker to available list
                     }
                   }
                 });
 
-                print('old Worker List: $availWorkerList');
-
-                ///check declined workers if on list remove
-
                 List<String> matchedWorkerList = [];
 
                 for (String workerId in availWorkerList) {
+                  // loop through all available workers to get location details
                   dbhandler
                       .child('Worker')
                       .orderByChild('worker_id')
                       .equalTo(workerId)
                       .onValue
                       .listen((event) async {
-                    print(
-                        'Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
                     if (event.snapshot.value != null) {
                       // Explicitly cast to Map<dynamic, dynamic>
                       Map<dynamic, dynamic>? data =
                           event.snapshot.value as Map<dynamic, dynamic>?;
                       if (data != null) {
-                        // Assuming there is only one entry, you can access it directly
                         var workerKey = data.keys.first;
                         var workerData = data[workerKey];
 
@@ -209,29 +194,31 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                         double long = workerData['longitude'];
                         int miles = workerData['miles'];
 
-                        double actualDist =
+                        double
+                            actualDist = // calculate distance between job and worker
                             calculateDistance(jobLat, jobLong, lat, long);
-                        print(actualDist);
 
+                        // convert km to miles
                         double actualMiles = actualDist * 0.6214;
 
                         if (actualMiles <= miles) {
-                          matchedWorkerList.add(workerId);
+                          // check if worker is within the job miles
+                          matchedWorkerList.add(
+                              workerId); // add worker to matched list if miles are within range of job location
                         }
                       }
                     }
-                    print("HERE MATCHED");
-                    print(matchedWorkerList);
 
                     List<Tuple2<String, int>> fullyMatchedWorkerList = [];
 
                     for (String workerId in matchedWorkerList) {
-                      print("HERE HERE WORKER ID: $workerId");
+                      // loop through all matched workers
                       if (widget.abilityList.isEmpty) {
-                        int jobCount = await workerJobCount(workerId);
-                        fullyMatchedWorkerList.add(Tuple2(workerId, jobCount));
-                        print("HERE in here");
-                        print(fullyMatchedWorkerList);
+                        // if no abilities are required
+                        int jobCount = await workerJobCount(
+                            workerId); // get the number of jobs the worker has
+                        fullyMatchedWorkerList.add(Tuple2(workerId,
+                            jobCount)); // tuple to link worker_id and job count
                       } else {
                         dbhandler
                             .child('Ability')
@@ -239,8 +226,6 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                             .equalTo(workerId)
                             .onValue
                             .listen((event) async {
-                          print(
-                              'HERE ABILITIES Snapshot: ${event.snapshot.value}');
                           if (event.snapshot.value != null) {
                             Map<dynamic, dynamic>? data =
                                 event.snapshot.value as Map<dynamic, dynamic>?;
@@ -251,11 +236,10 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                               var abilityData = data[abilityKey];
                               abilityData.forEach((key, value) {
                                 if (key != 'worker_id') {
-                                  workerAbilities.add(key);
+                                  workerAbilities.add(
+                                      key); // get all abilities worker can do
                                 }
                               });
-                              print("HERE LIST: $workerAbilities");
-
                               // Check if all abilities are present
                               bool allAbilitiesPresent = true;
                               for (String ability in widget.abilityList) {
@@ -266,6 +250,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                               }
 
                               if (allAbilitiesPresent) {
+                                // if all abilities are present add worker to fully matched list
                                 int jobCount = await workerJobCount(workerId);
                                 fullyMatchedWorkerList
                                     .add(Tuple2(workerId, jobCount));
@@ -277,34 +262,32 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                       // sort the list by job count
                       fullyMatchedWorkerList
                           .sort((a, b) => a.item2.compareTo(b.item2));
-                      //print(fullyMatchedWorkerLis);
+                      // extract the worker id from the tuple
                       List<String> orderedWorkers = fullyMatchedWorkerList
                           .map((tuple) => tuple.item1)
                           .toList();
                       setState(() {
-                        getList(orderedWorkers);
+                        getList(orderedWorkers); // return the list of workers
                       });
-                      print("workers");
-                      print(orderedWorkers);
                     }
                   });
                 }
               }
             } else {
-              // TO DO SHOW NO WORKERS FOUND
-              print('No workers found');
+              // no workers found
               getList([]);
             }
           });
         } else {
-          print("MEGAN IT fails: Data is not in the expected format");
+          // Data is not in the expected format
         }
       } else {
-        print("MEGAN IT fails: No data found for Job ID: $jobId");
+        // No data found for Job ID: $jobId
       }
     });
   }
 
+  // get the number of jobs a worker has
   Future<int> workerJobCount(String workerId) async {
     int count = 0;
     dbhandler
@@ -319,7 +302,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         if (data != null) {
           data.forEach((key, value) {
             if (value['worker_job_complete'] == false) {
-              count++;
+              count++; // count the number of jobs the worker has
             }
           });
         }
@@ -328,6 +311,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     return count;
   }
 
+  // delete job from database
   Future<void> deleteJobDb(String jobId) async {
     dbhandler
         .child('Jobs')
@@ -365,9 +349,11 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
     });
   }
 
+  // add job to assigned jobs database with chosen workerid
   Future<void> addAssignJobDb(String jobId, String companyId, String workerId,
       BuildContext context) async {
-    dbhandler
+    // pass jobid, companyid and workerid
+    dbhandler // check if job is already assigned was created and update worker_id
         .child("Assigned Jobs")
         .orderByChild("job_id")
         .equalTo(jobId)
@@ -382,13 +368,10 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
           dbhandler.child("Assigned Jobs").child(jobKey).update({
             "worker_id": workerId,
           });
-          print("here new worker updated");
         }
       } else {
-        String assignId = const Uuid().v4();
-
+        // if job has not been assigned create new job
         Map<String, dynamic> assignJob = {
-          "assign_job_id": assignId,
           "job_id": jobId,
           "company_id": companyId,
           "worker_id": workerId,
@@ -400,9 +383,8 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
 
         try {
           await dbhandler.child("Assigned Jobs").push().set(assignJob);
-          //Navigator.of(context).pop();
         } catch (error) {
-          print("Error saving to Firebase: $error");
+          // Handle issue adding to db
         }
       }
     });
@@ -411,6 +393,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
   @override
   Widget build(BuildContext context) {
     if (workerList.isEmpty) {
+      // if no workers are available
       return Scaffold(
         backgroundColor: const Color(0xffFCFAFC),
         appBar: AppBar(
@@ -419,6 +402,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
             padding: EdgeInsets.only(top: 20), // Add padding above the title
             child: Center(
               child: DisplayText(
+                  // display no workers available
                   text: "No Workers Available",
                   fontSize: 36,
                   colour: Colors.black),
@@ -436,10 +420,15 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                     text: "Keep Job",
                     onPress: () async {
                       addAssignJobDb(
-                          widget.jobId, widget.companyId, 'none', context);
+                          // add job to assigned jobs with no worker
+                          widget.jobId,
+                          widget.companyId,
+                          'none',
+                          context);
                       Navigator.push(
                           context,
                           MaterialPageRoute(
+                              // go back to company job page
                               builder: (context) => CompanyNavigationBar(
                                   companyId: widget.companyId, setIndex: 0)));
                     }),
@@ -448,8 +437,10 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                     buttonSize: 60,
                     text: "Delete Job",
                     onPress: () async {
-                      await deleteJobDb(widget.jobId);
+                      await deleteJobDb(
+                          widget.jobId); // delete job from database
                       Navigator.push(
+                          // go back to company job page
                           context,
                           MaterialPageRoute(
                               builder: (context) => CompanyNavigationBar(
@@ -461,6 +452,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
         ),
       );
     } else {
+      // one or more workers are available
       return Scaffold(
         backgroundColor: const Color(0xffFCFAFC),
         appBar: AppBar(
@@ -487,14 +479,15 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                   child: ListView.builder(
                     itemCount: workerList.length,
                     itemBuilder: (context, index) {
-                      // Assuming each worker is represented as a Map
-                      String worker = workerList[index];
+                      String worker = workerList[
+                          index]; // worker anymous so no personal data just worker 1,2,3...
                       return InkWell(
                         onTap: () async {
-                          //print('Clicked on worker: $worker');
+                          // choose worker add job to assigned jobs with chosen worker
                           addAssignJobDb(
                               widget.jobId, widget.companyId, worker, context);
                           Navigator.push(
+                              // go back to company job page
                               context,
                               MaterialPageRoute(
                                   builder: (context) => CompanyNavigationBar(
@@ -510,6 +503,7 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
+                            // display worker number
                             title: DisplayText(
                                 text: "worker: $index",
                                 fontSize: 24,
@@ -522,8 +516,9 @@ class CompanyWorkerListState extends State<CompanyWorkerList> {
                 ),
                 const SizedBox(height: 100),
                 PushButton(
+                    // delete job from database
                     buttonSize: 60,
-                    text: "Go Back",
+                    text: "Delete Job",
                     onPress: () async {
                       await deleteJobDb(widget.jobId);
                       Navigator.push(

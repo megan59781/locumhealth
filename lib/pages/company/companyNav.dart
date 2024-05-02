@@ -18,7 +18,7 @@ class CompanyNavigationBar extends StatefulWidget {
 
 class CompanyNavigationBarState extends State<CompanyNavigationBar> {
   final String companyId;
-  final int setIndex;
+  final int setIndex; // index of the page to be displayed when passed through
 
   CompanyNavigationBarState({required this.companyId, required this.setIndex}) {
     _selectedIndex = setIndex;
@@ -28,6 +28,7 @@ class CompanyNavigationBarState extends State<CompanyNavigationBar> {
   static const TextStyle optionStyle =
       TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
 
+  // List of widgets to be displayed in the bottom navigation bar
   static List<Widget> _widgetOptions(String companyId) => [
         CompanyJob(companyId: companyId),
         CompanyCreateJob(companyId: companyId),
@@ -35,6 +36,7 @@ class CompanyNavigationBarState extends State<CompanyNavigationBar> {
         CompanySettings(companyId: companyId),
       ];
 
+  // Function to change the index of the page to be displayed
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -43,7 +45,6 @@ class CompanyNavigationBarState extends State<CompanyNavigationBar> {
 
   @override
   Widget build(BuildContext context) {
-    //String CompanyId = widget.Company_id;
     return Scaffold(
       body: Center(
         child: _widgetOptions(companyId)[_selectedIndex],
@@ -53,24 +54,24 @@ class CompanyNavigationBarState extends State<CompanyNavigationBar> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.work_outline),
-            label: 'Jobs',
+            label: 'Jobs', // CompanyJob
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_business_outlined),
-            label: 'Create Job',
+            label: 'Create Job', // CompanyCreateJob
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
-            label: 'Profile',
+            label: 'Profile', // CompanyProfile
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),
-            label: 'Settings',
+            label: 'Settings', // CompanySettings
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepPurple,
-        onTap: _onItemTapped,
+        selectedItemColor: Colors.deepPurple, // purple when selected
+        onTap: _onItemTapped, // function to change the index
       ),
     );
   }

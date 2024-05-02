@@ -18,12 +18,12 @@ class WorkerAbilityState extends State<WorkerAbility> {
 
   @override
   void initState() {
-    super.initState();
+    super.initState(); // update abilities on load
     updateView(widget.workerId);
   }
 
+  // Update the view with the selected abilities from database
   Future<void> updateView(String workerId) async {
-    // updates the day button with the current day + times availability
     dbhandler
         .child('Ability')
         .orderByChild('worker_id')
@@ -39,11 +39,10 @@ class WorkerAbilityState extends State<WorkerAbility> {
           var abilityData = data[abilityKey];
           abilityData.forEach((key, value) {
             if (key != 'worker_id') {
+              // add all but worker_id to abilities
               workerAbilities.add(key);
             }
           });
-          print("HERE LIST: $workerAbilities");
-          // TO DO - update the view with the ability
           setState(() {
             selectedAbilitys = workerAbilities; // Update selected abilities
           });
@@ -52,6 +51,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
     });
   }
 
+  // Add the selected abilities to the database
   Future<void> addAbilitysDb(String workerId) async {
     dbhandler
         .child('Ability')
@@ -62,21 +62,20 @@ class WorkerAbilityState extends State<WorkerAbility> {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
-        if (data != null) {
+        if (data != null) { //if already added abilities update 
           var abilityKey = data.keys.first;
-          //var abilityData = data[abilityKey];
           for (String ability in selectedAbilitys) {
             await dbhandler.child("Ability").child(abilityKey).update({
-              ability: true,
+              ability: true, // set key as the abiiity and value as true to state selected
             });
           }
         }
-      } else {
+      } else { // if no abilities added yet add new with worker_id
         Map<String, dynamic> abilityList = {
           "worker_id": widget.workerId,
         };
         for (String ability in selectedAbilitys) {
-          abilityList.addAll({
+          abilityList.addAll({ // add all selected abilities to the list
             ability: true,
           });
         }
@@ -85,8 +84,10 @@ class WorkerAbilityState extends State<WorkerAbility> {
     });
   }
 
+  // List of selected abilities
+  // Same as companycreate job abilitys
   List<String> selectedAbilitys = [];
-  static const List<String> selections = <String>[
+  static const List<String> selections = <String>[ // IF UPDATED HERE ALSO UPDATE IN COMPANYCREATEJOB
     'First Aid',
     'Manual Handling',
     'Medication Administration',
@@ -109,7 +110,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
       appBar: AppBar(
         backgroundColor: const Color(0xffFCFAFC),
         title: const Padding(
-          padding: EdgeInsets.only(top: 20), // Add padding above the title
+          padding: EdgeInsets.only(top: 20),
           child: Center(
             child: DisplayText(
                 text: "Selected Abilities", fontSize: 36, colour: Colors.black),
@@ -137,7 +138,7 @@ class WorkerAbilityState extends State<WorkerAbility> {
                               value: selectedAbilitys.contains(ability),
                               onChanged: (bool? value) {
                                 setState(() {
-                                  if (value != null && value) {
+                                  if (value != null && value) { // if value is true add ability to selected
                                     selectedAbilitys.add(ability);
                                   } else {
                                     selectedAbilitys.remove(ability);
@@ -161,23 +162,21 @@ class WorkerAbilityState extends State<WorkerAbility> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                PushButton(
+                PushButton( // Submit button to save abilities
                   buttonSize: 70,
                   text: 'Submit Abilities',
                   onPress: () {
-                    addAbilitysDb(widget.workerId);
+                    addAbilitysDb(widget.workerId); // Add abilities to database on submit
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("Abilities Updated!"),
+                      content: Text("Abilities Updated!"), // inform user abilities updated
                     ));
-                    //Navigator.pop(context);
                   },
                 ),
-                // const SizedBox(height: 50),
                 const SizedBox(height: 15),
                 Container(
                   alignment: Alignment.centerRight,
                   margin: const EdgeInsets.only(top: 20, right: 30),
-                  child: const HelpButton(
+                  child: const HelpButton( // Help button to display to user how to use the page
                       message:
                           "Select the checkbox to tick the abilities you can do \n\n"
                           "Click the submit button to save your abilities, you can't delete abilities once saved, but you can add more",

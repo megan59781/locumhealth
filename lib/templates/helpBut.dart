@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
 
+// template for the help button in the app
 class HelpButton extends StatefulWidget {
   final String message;
   final String title;
 
   const HelpButton({
     super.key,
-    required this.message,
-    required this.title,
+    required this.message, // message to be displayed in pop-up
+    required this.title, // title of the pop-up
   });
 
   @override
@@ -16,6 +17,8 @@ class HelpButton extends StatefulWidget {
 }
 
 class _HelpButtonState extends State<HelpButton> {
+
+  // Displays the help message in a pop-up
   void helpViewer(BuildContext context) async {
     showDialog<void>(
       context: context,
@@ -48,7 +51,6 @@ class _HelpButtonState extends State<HelpButton> {
         height: 35,
         width: 35,
         decoration: BoxDecoration(
-          //border: Border.all(color: Colors.blueGrey[300]!, width: 1),
           borderRadius: BorderRadius.circular(20.0),
           color: Colors.blueGrey[50],
           boxShadow: [

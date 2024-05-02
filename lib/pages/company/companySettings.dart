@@ -17,34 +17,41 @@ class CompanySettings extends StatefulWidget {
 }
 
 class CompanySettingsState extends State<CompanySettings> {
+  // Firebase authentication and google sign in for sign out
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
+
+  // set for default company profile
   String name = " First Last Name ";
   String imgPath = "default";
   int experience = 0;
   String description = "No Description";
-  final TextEditingController textController = TextEditingController();
+  final TextEditingController textController =
+      TextEditingController(); // for changing profile
 
   @override
   void initState() {
     super.initState();
     setState(() {
+      // Set the state of the variables from database
       getProfile(widget.companyId);
     });
   }
 
+  // Function to sign out of the account
   Future<void> signOut() async {
     await _auth.signOut().then((_) {
-      //try the following
       _googleSignIn.signOut();
-      //try the following
 
       Navigator.push(
-          context, MaterialPageRoute(builder: (context) => const Login()));
+          // Navigate to the login page
+          context,
+          MaterialPageRoute(builder: (context) => const Login()));
     });
   }
 
+  // Function to get the company profile from the database
   Future<void> getProfile(String userId) async {
     dbhandler
         .child('Profiles')
@@ -70,6 +77,7 @@ class CompanySettingsState extends State<CompanySettings> {
     });
   }
 
+  // Function to update the company profile in the database
   Future<void> updateProfile(String item, dynamic value) async {
     dbhandler
         .child('Profiles')
@@ -81,24 +89,23 @@ class CompanySettingsState extends State<CompanySettings> {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
-        print("profile works here");
         if (data != null) {
           var profileKey = data.keys.first;
           await dbhandler.child('Profiles').child(profileKey).update({
             item: value,
           });
-          print("profile works here");
         }
       } else {
-        print("No Profile Found");
+        // no profile found
       }
     });
   }
 
+  // Function to change the image of the company profile
   Future<void> imageChanger(BuildContext context, String value) async {
     String dropdownValue = value;
 
-    // Dropdown items
+    // Dropdown items link to picture names
     List<String> dropdownItems = [
       'childcare',
       'physical disabilities',
@@ -118,17 +125,17 @@ class CompanySettingsState extends State<CompanySettings> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButton<String>(
-                    value: dropdownValue,
+                    value: dropdownValue, // set to selected value
                     onChanged: (String? newValue) {
                       setState(() {
                         dropdownValue = newValue!;
                       });
                     },
-                    items: dropdownItems
+                    items: dropdownItems // inital value is the current value
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value),
+                        child: Text(value), // text of image
                       );
                     }).toList(),
                   ),
@@ -143,11 +150,11 @@ class CompanySettingsState extends State<CompanySettings> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    // Call updateProfile function with the selected value
-                    await updateProfile("img", dropdownValue);
-
+                    await updateProfile("img",
+                        dropdownValue); // update image in profile database
                     Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      // message to show image updated
                       content: Text("Image Updated!"),
                     ));
                   },
@@ -161,17 +168,25 @@ class CompanySettingsState extends State<CompanySettings> {
     );
   }
 
+  // Function to change the profile details (NOT IMAGE THO)
   Future<void> profileChanger(
-      BuildContext context, String title, String item, dynamic value) async {
+      // title is database value and value is what stored
+      BuildContext context,
+      String title,
+      String item,
+      dynamic value) async {
     showDialog<void>(
+      // pass title of what changing
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("Change $title"),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(
-              controller: textController,
-              decoration: InputDecoration(labelText: value),
+              controller:
+                  textController, // text controller to get the new value
+              decoration:
+                  InputDecoration(labelText: value), // shows current value
             ),
           ]),
           actions: [
@@ -187,12 +202,15 @@ class CompanySettingsState extends State<CompanySettings> {
                   value = textController.text;
                 });
                 if (item == "experience") {
+                  // if experience is being changed, parse to int
                   value = int.parse(value);
                 }
-                await updateProfile(item, value);
+                await updateProfile(
+                    item, value); // update the profile in the database
                 textController.clear();
                 Navigator.of(context).pop(value);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  // message to show item updated
                   content: Text("$item Updated!"),
                 ));
               },
@@ -204,9 +222,10 @@ class CompanySettingsState extends State<CompanySettings> {
     );
   }
 
+  // Function to delete all jobs associated with the company if company is deleted
   Future<void> deleteJobs(String companyId) async {
     List<String> jobIdList = [];
-    await dbhandler
+    await dbhandler // get all jobs associated with the company
         .child('Assigned Jobs')
         .orderByChild('company_id')
         .equalTo(companyId)
@@ -223,9 +242,9 @@ class CompanySettingsState extends State<CompanySettings> {
         }
       }
     });
-
+    // delete all jobs associated with the company
     for (String jobId in jobIdList) {
-      dbhandler
+      dbhandler // remove the job from the jobs
           .child('Jobs')
           .orderByChild('job_id')
           .equalTo(jobId)
@@ -236,13 +255,12 @@ class CompanySettingsState extends State<CompanySettings> {
           Map<dynamic, dynamic>? data =
               event.snapshot.value as Map<dynamic, dynamic>?;
           if (data != null) {
-            // Assuming there is only one entry, you can access it directly
             var jobKey = data.keys.first;
             dbhandler.child('Jobs').child(jobKey).remove();
           }
         }
       });
-      dbhandler
+      dbhandler // remove the job from the assigned jobs
           .child('Assigned Jobs')
           .orderByChild('job_id')
           .equalTo(jobId)
@@ -253,13 +271,48 @@ class CompanySettingsState extends State<CompanySettings> {
           Map<dynamic, dynamic>? data =
               event.snapshot.value as Map<dynamic, dynamic>?;
           if (data != null) {
-            // Assuming there is only one entry, you can access it directly
             var jobKey = data.keys.first;
             dbhandler.child('Assigned Jobs').child(jobKey).remove();
           }
         }
       });
     }
+  }
+
+  // Function to delete the company profile and company
+  Future<void> deleteCompany(String companyId) async {
+    dbhandler // remove the company from the profiles
+        .child('Profiles')
+        .orderByChild('user_id')
+        .equalTo(companyId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var profileKey = data.keys.first;
+          dbhandler.child('Profiles').child(profileKey).remove();
+        }
+      }
+    });
+    dbhandler
+        .child('Company')
+        .orderByChild('company_id')
+        .equalTo(companyId)
+        .onValue
+        .take(1)
+        .listen((event) async {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var companyKey = data.keys.first;
+          dbhandler.child('Company').child(companyKey).remove();
+        }
+      }
+    });
   }
 
   @override
@@ -269,7 +322,7 @@ class CompanySettingsState extends State<CompanySettings> {
         appBar: AppBar(
           backgroundColor: const Color(0xffFCFAFC),
           title: const Padding(
-            padding: EdgeInsets.only(top: 15), // Add padding above the title
+            padding: EdgeInsets.only(top: 15),
             child: Center(
               child: DisplayText(
                   text: 'Settings', fontSize: 36, colour: Colors.black),
@@ -287,17 +340,18 @@ class CompanySettingsState extends State<CompanySettings> {
               PushButton(
                   buttonSize: 70,
                   text: "Change Name",
-                  onPress: () =>
+                  onPress: () => // change the name of the company
                       profileChanger(context, "Company Name", "name", name)),
               const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
-                  text: "Change Care Type",
+                  text: "Change Care Type", // change the image of the company
                   onPress: () => imageChanger(context, imgPath)),
               const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
-                  text: "Change Description",
+                  text:
+                      "Change Description", // change the description of the company
                   onPress: () => profileChanger(context, "Your Company Summary",
                       "description", description)),
               const SizedBox(height: 25),
@@ -305,19 +359,19 @@ class CompanySettingsState extends State<CompanySettings> {
                   buttonSize: 70,
                   text: "Delete Account",
                   onPress: () => {
+                        // delete the account and all associated jobs and data
                         deleteJobs(widget.companyId),
-                        //TO DO: Delete the company profile
+                        deleteCompany(widget.companyId),
                       }),
               const SizedBox(height: 25),
-              PushButton(
+              PushButton( // sign out of the account
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
               const SizedBox(height: 75),
               Container(
                 alignment: Alignment.centerRight,
                 margin: const EdgeInsets.only(top: 20, right: 30),
-                child: const HelpButton(
-                    message:
-                        'Select a button to change your profile\n\n'
+                child: const HelpButton( // help button for user how to use page
+                    message: 'Select a button to change your profile\n\n'
                         'To remove your account click Delete Account \n\n'
                         'Click the Sign Out button to log out of your account',
                     title: "Settings"),

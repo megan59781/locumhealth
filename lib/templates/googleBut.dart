@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// template for the google buttons in login page
 class GoogleButton extends StatelessWidget {
   final String image;
   final Function()? onPress;
@@ -15,15 +16,14 @@ class GoogleButton extends StatelessWidget {
       height: 150,
       child: ElevatedButton(
           onPressed: onPress,
-          clipBehavior: Clip.antiAlias, // <--add this
+          clipBehavior: Clip.antiAlias,
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100.0), // <--add this
+              borderRadius: BorderRadius.circular(100.0), 
             ),
-            padding: EdgeInsets.zero, // <--add this
+            padding: EdgeInsets.zero,
           ),
           child: Image.asset(
-            // ignore: prefer_adjacent_string_concatenation
             'lib/images/$image',
           )),
     );

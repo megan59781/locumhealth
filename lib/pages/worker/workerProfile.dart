@@ -15,6 +15,7 @@ class WorkerProfile extends StatefulWidget {
 
 class WorkerProfileState extends State<WorkerProfile> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
+  // Default values if the profile is empty
   String name = " First Last Name ";
   String imgPath = "default";
   int experience = 0;
@@ -22,12 +23,14 @@ class WorkerProfileState extends State<WorkerProfile> {
 
   @override
   void initState() {
+    // This function is called when the state is initialized
     super.initState();
     setState(() {
       getProfile();
     });
   }
 
+  // Get the profile of the worker from db
   void getProfile() async {
     await dbhandler
         .child('Profiles')
@@ -75,23 +78,26 @@ class WorkerProfileState extends State<WorkerProfile> {
                     children: [
               const SizedBox(height: 10),
               ProfileView(
+                // Display the profile
                 name: name,
                 imgPath: imgPath,
                 experience: '$experience Years Experience',
                 description: description,
-                scale: 1,
+                scale: 1, // default scale
               ),
               const SizedBox(height: 40),
               TextButton(
                 onPressed: () {
-                  // Action to perform when the button is pressed
+                  // Navigate user to the settings page to edit the profile
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              WorkerNavigationBar(workerId: widget.workerId, setIndex: 4)));
+                          // Navigate to the settings page
+                          builder: (context) => WorkerNavigationBar(
+                              workerId: widget.workerId, setIndex: 4)));
                 },
                 child: const DisplayText(
+                    // Display the text
                     text: "To edit the profile go to settings",
                     fontSize: 18,
                     colour: Colors.deepPurple),
