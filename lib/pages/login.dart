@@ -1,4 +1,5 @@
 //import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:fyp/pages/company/companyNav.dart';
 import 'package:fyp/pages/worker/workerNav.dart';
 import 'package:fyp/templates/displayText.dart';
@@ -16,21 +17,22 @@ class Login extends StatefulWidget {
   State createState() => LoginState();
 }
 
-/// The state class for the Login widget.
 class LoginState extends State<Login> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
-  DateTime selectedDate = DateTime.now()
-      .subtract(const Duration(days: ((18 * 365) + 4))); // as 4 leep years
-  DateTime minAgeDate =
-      DateTime.now().subtract(const Duration(days: ((18 * 365) + 4)));
-  final TextEditingController nameController = TextEditingController();
 
-  /// Retrieves the current latitude and longitude.
-  ///
-  /// Returns a Future that completes with a List containing the latitude and longitude.
-  /// If an error occurs, a default location [0.0, 0.0] is returned.
+  DateTime selectedDate = DateTime.now().subtract(const Duration(
+      days: ((18 * 365) +
+          4))); // date is 18 years from current day (plus 4 = leep years)
+  DateTime minAgeDate = DateTime.now().subtract(const Duration(
+      days: ((18 * 365) +
+          4))); // date is 18 years from current day (plus 4 = leep years)
+
+  final TextEditingController nameController =
+      TextEditingController(); // Controller for the company name
+
+  // Retrieves the current latitude and longitude.
   Future<List<double>> getCurrentLatLong() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
@@ -40,19 +42,14 @@ class LoginState extends State<Login> {
       double latitude = position.latitude;
       double longitude = position.longitude;
 
-      return [latitude, longitude];
+      return [latitude, longitude]; // Return the latitude and longitude
     } catch (e) {
-      print(e);
       //print(e);
-      // You might want to handle the error accordingly, for example, returning a default location.
       return [0.0, 0.0];
     }
   }
 
-  /// Adds a worker to the database if it doesn't already exist.
-  ///
-  /// Retrieves the current location and creates a worker object with the user's information.
-  /// The worker object is then pushed to the Firebase database under the "Worker" node.
+  // Adds a worker to the database if it doesn't already exist
   Future<void> addWorkerDb(user) async {
     dbhandler
         .child('Worker')
@@ -61,9 +58,9 @@ class LoginState extends State<Login> {
         .onValue
         .take(1)
         .listen((event) async {
-      //print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
-        DateTime? bday = await _dateSelector(context);
+        DateTime? bday =
+            await _dateSelector(context); // get the worker's birthday
         String name = user.displayName.toString();
         List<double> location = await getCurrentLatLong();
         Map<String, dynamic> worker = {
@@ -76,7 +73,8 @@ class LoginState extends State<Login> {
           "miles": 1,
         };
         dbhandler.child("Worker").push().set(worker).then((value) async {
-          await addProfileDb(user.uid, name, "default");
+          await addProfileDb(user.uid, name,
+              "default"); // Add the worker's profile to the database
           await Future.delayed(const Duration(seconds: 5));
         }).catchError((error) {
           //print("Error saving to Firebase: $error");
@@ -84,6 +82,7 @@ class LoginState extends State<Login> {
       }
     });
     Navigator.push(
+        // Navigate to the worker navigation bar
         context,
         MaterialPageRoute(
             builder: (context) => WorkerNavigationBar(
@@ -92,10 +91,7 @@ class LoginState extends State<Login> {
                 )));
   }
 
-  /// Adds a company to the database if it doesn't already exist.
-  ///
-  /// Creates a company object with the user's information and pushes it to the Firebase database
-  /// under the "Company" node.
+  // Adds a company to the database if it doesn't already exist
   Future<void> addCompanyDb(user) async {
     dbhandler
         .child('Company')
@@ -104,7 +100,6 @@ class LoginState extends State<Login> {
         .onValue
         .take(1)
         .listen((event) async {
-      print('Snapshot: ${event.snapshot.value}'); // Print the entire snapshot
       if (event.snapshot.value == null) {
         await nameSelector(context);
         String name = nameController.text;
@@ -114,20 +109,22 @@ class LoginState extends State<Login> {
           "email": user.email.toString(),
         };
         dbhandler.child("Company").push().set(company).then((value) async {
-          print("works company");
-          await addProfileDb(user.uid, name, "general care");
+          await addProfileDb(user.uid, name,
+              "general care"); // Add the company's profile to the database
           //Navigator.of(context).pop();
         }).catchError((error) {
-          print("Error saving to Firebase: $error");
+          //print("Error saving to Firebase: $error");
         });
       }
     });
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => CompanyNavigationBar(companyId: user.uid, setIndex: 0)));
+            builder: (context) =>
+                CompanyNavigationBar(companyId: user.uid, setIndex: 0)));
   }
 
+  // Adds a profile to the database
   Future<void> addProfileDb(String userId, String name, String img) async {
     Map<String, dynamic> profile = {
       "user_id": userId,
@@ -139,39 +136,39 @@ class LoginState extends State<Login> {
     await dbhandler.child("Profiles").push().set(profile);
   }
 
-  /// Verifies the Google account and returns the user information if valid.
-  ///
-  /// Uses the Google Sign-In package to authenticate the user with Google.
-  /// If the authentication is successful, the user information is returned.
-  /// If an error occurs, null is returned.
+  // Verifies the Google account and returns the user information if valid
+  // Uses the Google Sign-In package to authenticate and if the authentication is successful, the user information is returned
   Future<User?> _handleSignIn() async {
     try {
       GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
       GoogleSignInAuthentication googleSignInAuthentication =
-          await googleSignInAccount!.authentication;
+          await googleSignInAccount!
+              .authentication; // Get the authentication details
 
       AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleSignInAuthentication.accessToken,
+        accessToken:
+            googleSignInAuthentication.accessToken, // Get the access token
         idToken: googleSignInAuthentication.idToken,
       );
 
       UserCredential authResult = await _auth.signInWithCredential(credential);
-      User? user = authResult.user;
+      User? user = authResult.user; // Get the user information
 
       return user;
     } catch (error) {
-      print(error);
-      return null;
+      //print(error);
+      return null; // Return null if the authentication fails
     }
   }
 
+  // Displays a date picker for the user to select their birthday
   Future<DateTime> _dateSelector(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
         context: context,
         initialDate: selectedDate,
         firstDate: selectedDate.subtract(const Duration(days: (31025))),
-        lastDate: minAgeDate,
-        helpText: 'Please Pick Your Birthday' );
+        lastDate: minAgeDate, // set min age to 18
+        helpText: 'Please Pick Your Birthday');
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -180,6 +177,7 @@ class LoginState extends State<Login> {
     return selectedDate;
   }
 
+  // Displays a dialog box for the user to enter their company name
   Future<void> nameSelector(BuildContext context) async {
     return showDialog(
       context: context,
@@ -212,7 +210,7 @@ class LoginState extends State<Login> {
       appBar: AppBar(
         backgroundColor: const Color(0xffFCFAFC),
         title: const Padding(
-          padding: EdgeInsets.only(top: 15), // Add padding above the title
+          padding: EdgeInsets.only(top: 15),
           child: Center(
             child: DisplayText(
                 text: 'Login or Register', fontSize: 36, colour: Colors.black),
@@ -229,12 +227,18 @@ class LoginState extends State<Login> {
             GoogleButton(
               image: "google_icon_c.png",
               onPress: () async {
-                User? user = await _handleSignIn();
+                // google company button pressed
+                User? user = await _handleSignIn(); // get the user information
                 if (user != null) {
-                  addCompanyDb(user);
+                  addCompanyDb(user); // add the company to the database or login if account exists
                 } else {
-                  print('failed');
-                  // TO DO SORT FAILED GOOGLE
+                  // login failed
+                  Flushbar(
+                    // show a message to confirm the job has been completed
+                    backgroundColor: Colors.black,
+                    message: "Error logging in, please check your details.",
+                    duration: const Duration(seconds: 4),
+                  ).show(context);
                 }
               },
             ),
@@ -245,12 +249,16 @@ class LoginState extends State<Login> {
             GoogleButton(
               image: "google_icon_w.png",
               onPress: () async {
-                User? user = await _handleSignIn();
-                if (user != null) {
+                User? user = await _handleSignIn(); // get the user information
+                if (user != null) { // add the worker to the database or login if account exists
                   addWorkerDb(user);
                 } else {
-                  print('failed');
-                  // TO DO SORT FAILED GOOGLE
+                  Flushbar(
+                    // login failed
+                    backgroundColor: Colors.black,
+                    message: "Error logging in, please check your details.",
+                    duration: const Duration(seconds: 4),
+                  ).show(context);
                 }
               },
             ),

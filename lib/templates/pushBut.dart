@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// template for the push button in the app to keep format
 class PushButton extends StatelessWidget {
   final double buttonSize;
   final String text;
@@ -20,7 +21,7 @@ class PushButton extends StatelessWidget {
         onPressed: onPress,
         style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all(Colors.deepPurple),
-            elevation: MaterialStateProperty.all(5),
+            elevation: MaterialStateProperty.all(5), // Shadow
             shadowColor: MaterialStateProperty.all(Colors.blueGrey[300]!.withOpacity(0.5)),
             padding: MaterialStateProperty.all(const EdgeInsets.all(0))),
         child: Text(text,

@@ -21,19 +21,21 @@ class CompanyCreateJob extends StatefulWidget {
 class CompanyCreateJobState extends State<CompanyCreateJob> {
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
 
+  // Variables for location retrival
   final TextEditingController locationController = TextEditingController();
   double lat = 0.0;
   double long = 0.0;
   String currentLocation = "Get Location";
 
+  // Variables for date and time selection
   DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay selectedTime = TimeOfDay.now();
-
   TimeOfDay startTime = TimeOfDay.now();
   TimeOfDay endTime = TimeOfDay.now();
 
+  // List for Ability selection - same as workers
   List<String> selectedAbilitys = [];
-  static const List<String> selections = <String>[
+  static const List<String> selections = <String>[ // IF UPDATED HERE ALSO UPDATE IN WORKERABILITY
     'First Aid',
     'Manual Handling',
     'Medication Administration',
@@ -49,6 +51,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     'Restrained Training',
   ];
 
+  // Pop-up that allows the user to select the abilities required for the job
   Future<void> abilitySelector(
       BuildContext context, List<String> selections) async {
     return showDialog(
@@ -80,7 +83,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                                 Checkbox(
                                   value: selectedAbilitys.contains(ability),
                                   onChanged: (bool? value) {
-                                    setState(() {
+                                    setState(() { // Update the state of the checkbox to update the list
                                       if (value != null) {
                                         if (value) {
                                           selectedAbilitys.add(ability);
@@ -120,7 +123,6 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
             ),
             TextButton(
               onPressed: () async {
-                print(selectedAbilitys);
                 Navigator.of(context).pop();
               },
               child: const Text('Submit'),
@@ -131,6 +133,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     );
   }
 
+  // Date Selector pop-up that allows the user to select the date of the job
   Future<void> _dateSelector(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
         context: context,
@@ -139,11 +142,13 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
         lastDate: DateTime(2024, 6));
     if (picked != null && picked != selectedDate) {
       setState(() {
-        selectedDate = picked;
+        selectedDate = picked; // Update the selected date variable
       });
     }
   }
-
+  
+  // Time Selector controller that allows the user to select the start and end time of the job
+  // Called within timeSelector 
   Future<TimeOfDay> _selectTime(TextEditingController controller) async {
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
@@ -151,13 +156,15 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     );
     if (newTime != null) {
       setState(() {
-        selectedTime = newTime;
+        selectedTime = newTime; // Update the selected time variable and the text field
         controller.text = selectedTime.format(context);
       });
     }
     return selectedTime;
   }
 
+  // Time Selector pop-up that allows the user to select the start and end time of the job
+  // Passes current time which is start or end time and function to update the selected time
   Future<void> _timeSelector(BuildContext context, String currentTime,
       Function(TimeOfDay) updateSelected) {
     TextEditingController timeController = TextEditingController();
@@ -176,10 +183,10 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                 TextFormField(
                   controller: timeController,
                   decoration: InputDecoration(
-                    hintText: currentTime,
+                    hintText: currentTime, // Display the currently selected time or last selected
                     border: const OutlineInputBorder(),
                   ),
-                  onTap: () => _selectTime(timeController),
+                  onTap: () => _selectTime(timeController), // Call the time selector to update the text field
                 ),
                 const SizedBox(height: 20),
               ],
@@ -203,10 +210,9 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
               ),
               child: const Text('Submit'),
               onPressed: () {
-                // TO DO SAVE TIMES
-                TimeOfDay currentTime = TimeOfDay.fromDateTime(
+                TimeOfDay currentTime = TimeOfDay.fromDateTime( // converts to date text to save format to db
                     DateTime.parse("2024-01-01 ${timeController.text}"));
-                updateSelected(currentTime);
+                updateSelected(currentTime); // updates the current time in widget build
                 Navigator.of(context).pop();
               },
             ),
@@ -216,6 +222,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     );
   }
 
+  // Location Selector pop-up that allows the user to enter the location of the job and returns the coordinates
   Future<void> locationSelector(BuildContext context) async {
     return showDialog(
       context: context,
@@ -236,7 +243,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                getLocationCoordinates(context);
+                getLocationCoordinates(context); // Get the coordinates of the location entered
               },
               child: const Text('Submit'),
             ),
@@ -246,22 +253,19 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     );
   }
 
+  // Get the placemarks of the location entered
   Future<String> getPlacemarks(double lat, double long) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, long);
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, long); // gets placemark from coordinates
 
-      var address = '';
+      var address = ''; // Get the address from the placemark
 
-      if (placemarks.isNotEmpty) {
-        //address += placemarks.reversed.last.subLocality ?? '';
+      if (placemarks.isNotEmpty) { // only keep the address if it is not empty
         var subLocality = placemarks.reversed.last.subLocality ?? '';
         if (subLocality.trim().isNotEmpty) {
           address += subLocality;
         }
-        //address += ', ${placemarks.reversed.last.locality ?? ''}';
-        // address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
-        //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
-        //address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+
         var postalCode = placemarks.reversed.last.postalCode ?? '';
         if (postalCode.trim().isNotEmpty) {
           if (address.isNotEmpty) {
@@ -269,20 +273,17 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
           }
           address += postalCode;
         }
-        // address += ', ${placemarks.reversed.last.country ?? ''}';
       }
-
-      //print("Your Address for ($lat, $long) is: $address");
-
-      return address;
+      return address; // address bult up of sublocality and postal code
     } catch (e) {
-      //print("Error getting placemarks: $e");
+      // Error getting placemarks: $e
       return "No Address";
     }
   }
 
+  // Get the coordinates of the location entered
   Future<String> getLocationCoordinates(BuildContext context) async {
-    final String location = locationController.text;
+    final String location = locationController.text; // Get the location from the text in location pop-up text field
     String address = location;
     try {
       List<Location> locations = await locationFromAddress(location);
@@ -291,27 +292,26 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
         long = locations[0].longitude;
         currentLocation = await getPlacemarks(lat, long);
         setState(() {
-          address = currentLocation;
-        }); //pass through placemarks
-        print(lat);
-        print(long);
+          address = currentLocation; // Update the current location in the widget build
+        }); 
       } else {
-        print('No location found for: $location');
+        // No location found
       }
     } catch (e) {
-      print('Error during geocoding: $e');
+      // Error with geocoding
     }
     return address;
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Convert time string to minutes for comparing time
   int stringTimeToMins(String time) {
     List<String> parts = time.split(':');
     int hours = int.parse(parts[0]);
     int minutes = int.parse(parts[1]);
-    return hours * 60 + minutes;
+    return hours * 60 + minutes; // returns total minuites of time
   }
 
+  // Add the job to the database with details entered
   Future<void> addJobDb(
       String date,
       String companyId,
@@ -336,17 +336,14 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
     try {
       await dbhandler.child("Jobs").push().set(job);
       getJobId(jobId);
-      //Navigator.of(context).pop();
-    } catch (error) {
-      print("Error saving to Firebase: $error");
-    }
+    } catch (error) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    String dateString = DateFormat('dd-MM-yyyy').format(selectedDate);
-    String companyId = widget.companyId;
-    String jobId = "";
+    String dateString = DateFormat('dd-MM-yyyy').format(selectedDate); // Format the date to display
+    String companyId = widget.companyId; // simplifys calling
+    String jobId = ""; // initialise job id which updates once added to db
     return Scaffold(
       backgroundColor: const Color(0xffFCFAFC),
       appBar: AppBar(
@@ -358,7 +355,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                 text: 'Create a New Job', fontSize: 36, colour: Colors.black),
           ),
         ),
-        automaticallyImplyLeading: false, // Remove the back button
+        automaticallyImplyLeading: false, // Remove the back button of title
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -372,7 +369,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                     fontSize: 30,
                     colour: Color(0xFF280387)),
                 const SizedBox(height: 10),
-                Row(
+                Row( // Display the date and calendar icon for selecting the date
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -385,7 +382,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                       ),
                     ]),
                 const SizedBox(height: 25),
-                PushButton(
+                PushButton( // Button to select the abilities required for the job
                     buttonSize: 60,
                     text: "Select Abilities",
                     onPress: () => abilitySelector(context, selections)),
@@ -395,7 +392,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                     fontSize: 30,
                     colour: Color(0xFF280387)),
                 const SizedBox(height: 10),
-                Row(
+                Row( // Display the start time and clock icons for selecting the time
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -413,7 +410,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                               }))
                     ]),
                 const SizedBox(height: 20),
-                Row(
+                Row( // Display the end time and clock icons for selecting the time
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -435,7 +432,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                     text: 'Select the Job Location',
                     fontSize: 30,
                     colour: Color(0xFF280387)),
-                SizedBox(
+                SizedBox( // Display the location and location icon for selecting the location
                   width: 350,
                   child: Padding(
                     padding: const EdgeInsets.all(10),
@@ -456,26 +453,26 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                PushButton(
+                PushButton( // Button to create the job with the details entered and add to db
                   buttonSize: 70,
                   text: 'Create Job',
                   onPress: () async {
                     int timeDif = stringTimeToMins(endTime.format(context)) -
                         stringTimeToMins(startTime.format(context));
-                    if (lat == 0.0 || long == 0.0) {
+                    if (lat == 0.0 || long == 0.0) { // Check if location is entered if not error message
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Please enter a valid location'),
                         ),
                       );
-                    } else if (timeDif < 29) {
+                    } else if (timeDif < 29) { // Check if the job is at least 30 minutes long if not error message
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
                               'Please make sure the job ends at least 30 minutes after it starts'),
                         ),
                       );
-                    } else {
+                    } else { // If all details are entered correctly add the job to the db
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Job Created Successfully'),
@@ -485,11 +482,9 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                           long, context, (value) {
                         setState(() {
                           jobId = value;
-                          print("check here");
-                          print(jobId);
                           Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute( // Navigate to the worker list page to assign workers to the job
                                   builder: (context) => CompanyWorkerList(
                                       companyId: widget.companyId,
                                       jobId: jobId,
@@ -500,7 +495,7 @@ class CompanyCreateJobState extends State<CompanyCreateJob> {
                   },
                 ),
                 const SizedBox(height: 5),
-                Container(
+                Container( // Help button to explain to user how to create a job
                   alignment: Alignment.centerRight,
                   margin: const EdgeInsets.only(top: 20, right: 30),
                   child: const HelpButton(

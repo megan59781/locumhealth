@@ -25,7 +25,7 @@ class WorkerJobState extends State<WorkerJob> {
 
   @override
   void initState() {
-    super.initState();
+    super.initState(); // update jobs on load
     String workerId = widget.workerId;
     setState(() {
       getJobs(workerId, (List<dynamic> jobDetailList) {
@@ -36,6 +36,7 @@ class WorkerJobState extends State<WorkerJob> {
     });
   }
 
+  // Get the placemarks for the given latitude and longitude
   Future<String> getPlacemarks(double lat, double long) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(lat, long);
@@ -43,14 +44,12 @@ class WorkerJobState extends State<WorkerJob> {
       var address = '';
 
       if (placemarks.isNotEmpty) {
+        // Check if placemarks is not empty
         var subLocality = placemarks.reversed.last.subLocality ?? '';
         if (subLocality.trim().isNotEmpty) {
           address += subLocality;
         }
-        //address += ', ${placemarks.reversed.last.locality ?? ''}';
-        // address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
-        //address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
-        //address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+
         var postalCode = placemarks.reversed.last.postalCode ?? '';
         if (postalCode.trim().isNotEmpty) {
           if (address.isNotEmpty) {
@@ -60,17 +59,16 @@ class WorkerJobState extends State<WorkerJob> {
         }
       }
 
-      //print("Your Address for ($lat, $long) is: $address");
-
-      return address;
+      return address; // Return the address as postal code and sublocality
     } catch (e) {
-      //print("Error getting placemarks: $e");
+      // Error getting placemarks: $e
       return "No Address";
     }
   }
 
+  // Get the jobs for the given workerId
   void getJobs(String workerId, Function(List<dynamic> jobList) getJobsList) {
-    dbhandler
+    dbhandler // get list of jobs assigned to the worker
         .child('Assigned Jobs')
         .orderByChild('worker_id')
         .equalTo(workerId)
@@ -82,7 +80,9 @@ class WorkerJobState extends State<WorkerJob> {
 
         if (data != null) {
           List<Map<String, dynamic>> jobIdList = [];
+
           data.forEach((key, value) {
+            // for each job assigned get the job details
             String jobId = value['job_id'];
             String companyId = value['company_id'];
             bool accepted = value['worker_accepted'];
@@ -102,6 +102,7 @@ class WorkerJobState extends State<WorkerJob> {
           List<Map<String, dynamic>> jobDetailsList = [];
 
           for (var job in jobIdList) {
+            // for each job get specific job details
             String jobId = job['jobId'];
             String companyId = job['companyId'];
             bool accepted = job['accepted'];
@@ -128,7 +129,7 @@ class WorkerJobState extends State<WorkerJob> {
                   double long = jobData['longitude'];
                   String location = await getPlacemarks(lat, long);
 
-                  await dbhandler
+                  await dbhandler // get the company name for the job
                       .child('Company')
                       .orderByChild('company_id')
                       .equalTo(companyId)
@@ -143,6 +144,7 @@ class WorkerJobState extends State<WorkerJob> {
                           var companyData = data[companyKey];
                           String companyName = companyData['name'];
 
+                          // Add the job details to the list for display
                           jobDetailsList.add({
                             'jobId': jobId,
                             'company': companyName,
@@ -163,16 +165,17 @@ class WorkerJobState extends State<WorkerJob> {
             });
           }
 
-          await getJobsList(jobDetailsList);
+          await getJobsList(jobDetailsList); // return the list of job details
         } else {
-          await getJobsList([]);
+          await getJobsList([]); // return empty list if no jobs
         }
       } else {
-        print("Data is not in the expected format");
+        // Data is not in the expected format
       }
     });
   }
 
+  // Pick the colour for the job based on the assigned and riskSupport status
   Color pickColour(bool assigned, bool riskSupport) {
     if (assigned && riskSupport == false) {
       return const Color(0xff005ccc);
@@ -183,6 +186,7 @@ class WorkerJobState extends State<WorkerJob> {
     }
   }
 
+  // Accept the job with the given jobId to update assigned jobs
   Future<void> acceptJob(String jobId) async {
     dbhandler
         .child('Assigned Jobs')
@@ -196,16 +200,32 @@ class WorkerJobState extends State<WorkerJob> {
             event.snapshot.value as Map<dynamic, dynamic>?;
 
         if (data != null) {
-          // Assuming there is only one entry, you can access it directly
           var assignedJobKey = data.keys.first;
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
-            'worker_accepted': true,
+            'worker_accepted': true, // set worker accepted to true
           });
+        }
+      }
+    });
+    dbhandler // remove declined workers if any
+        .child('Declined Workers')
+        .orderByChild('job_id')
+        .equalTo(jobId)
+        .onValue
+        .first
+        .then((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null) {
+          var declinedKey = data.keys.first;
+          dbhandler.child('Declined Workers').child(declinedKey).remove();
         }
       }
     });
   }
 
+  // Confirm the job with the given jobId to update assigned jobs
   Future<void> confirmJob(String jobId) async {
     dbhandler
         .child('Assigned Jobs')
@@ -219,18 +239,18 @@ class WorkerJobState extends State<WorkerJob> {
             event.snapshot.value as Map<dynamic, dynamic>?;
 
         if (data != null) {
-          // Assuming there is only one entry, you can access it directly
           var assignedJobKey = data.keys.first;
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
-            "worker_job_complete": true,
+            "worker_job_complete": true, // set worker job complete to true
           });
         }
       }
     });
   }
 
+  // Delete the job with the given jobId
   Future<void> deleteJobDb(String jobId) async {
-    dbhandler
+    dbhandler // delete the job from the assigned jobs if both company and worker have completed
         .child('Assigned Jobs')
         .orderByChild('job_id')
         .equalTo(jobId)
@@ -241,7 +261,6 @@ class WorkerJobState extends State<WorkerJob> {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
         if (data != null) {
-          // Assuming there is only one entry, you can access it directly
           var assignedJobKey = data.keys.first;
           var assignedData = data[assignedJobKey];
 
@@ -249,35 +268,15 @@ class WorkerJobState extends State<WorkerJob> {
           bool worker = assignedData['company_job_complete'];
 
           if (company && worker) {
-            dbhandler
-                .child("Risk Support Plans")
-                .orderByChild('job_id')
-                .equalTo(jobId)
-                .onValue
-                .take(1)
-                .listen((event) async {
-              if (event.snapshot.value != null) {
-                Map<dynamic, dynamic>? data =
-                    event.snapshot.value as Map<dynamic, dynamic>?;
-                if (data != null) {
-                  var riskSupportKey = data.keys.first;
-
-                  dbhandler
-                      .child('Risk Support Plans')
-                      .child(riskSupportKey)
-                      .remove();
-                }
-              }
-              dbhandler.child('Assigned Jobs').child(assignedJobKey).remove();
-            });
+            dbhandler.child('Assigned Jobs').child(assignedJobKey).remove();
           }
         }
       }
     });
   }
 
+  // Add the declined worker to the database if the worker declines the job
   Future<void> addDeclinedDb(String jobId, String workerId) async {
-    print("here function working worker removed");
     dbhandler
         .child("Declined Workers")
         .orderByChild("job_id")
@@ -286,6 +285,7 @@ class WorkerJobState extends State<WorkerJob> {
         .take(1)
         .listen((event) async {
       if (event.snapshot.value != null) {
+        // if there are already declined workers add the worker to the list
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
         if (data != null) {
@@ -296,19 +296,19 @@ class WorkerJobState extends State<WorkerJob> {
           dbhandler.child("Declined Workers").child(jobKey).update({
             newKey: workerId,
           });
-          print("here data exists");
         }
       } else {
+        // if no declined workers add new declined worker
         Map<String, dynamic> workers = {
           "job_id": jobId,
           "worker_id_0": workerId,
         };
         await dbhandler.child("Declined Workers").push().set(workers);
-        print("added HERE");
       }
     });
   }
 
+  // Decline the job with the given jobId
   Future<void> declineJob(String jobId) async {
     print('jobid declined is $jobId');
     dbhandler
@@ -326,13 +326,14 @@ class WorkerJobState extends State<WorkerJob> {
           // Assuming there is only one entry, you can access it directly
           var assignedJobKey = data.keys.first;
           dbhandler.child('Assigned Jobs').child(assignedJobKey).update({
-            'worker_id': "none",
+            'worker_id': "none", // set worker id to none
           });
         }
       }
     });
   }
 
+  // pop-up to accpet job or decline job
   Future<void> jobSelector(BuildContext context, String jobId) async {
     return showDialog(
       context: context,
@@ -347,14 +348,14 @@ class WorkerJobState extends State<WorkerJob> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                declineJob(jobId);
+                declineJob(jobId); // decline the job in database
                 addDeclinedDb(jobId, widget.workerId);
               },
               child: const Text('No'),
             ),
             TextButton(
               onPressed: () {
-                acceptJob(jobId);
+                acceptJob(jobId); // accept the job in database
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
@@ -365,6 +366,7 @@ class WorkerJobState extends State<WorkerJob> {
     );
   }
 
+  // pop-up to confirm job completion
   Future<void> jobConfirmation(BuildContext context, String jobId) async {
     return showDialog(
       context: context,
@@ -373,7 +375,7 @@ class WorkerJobState extends State<WorkerJob> {
           title: const Text('Has the job been completed?'),
           content: const DisplayText(
               text:
-                  'Please select Yes to confirm the job complettion or No if it has not.',
+                  'Please select Yes to confirm the job completion or No if it has not.',
               fontSize: 20,
               colour: Colors.black),
           actions: [
@@ -385,15 +387,18 @@ class WorkerJobState extends State<WorkerJob> {
             ),
             TextButton(
               onPressed: () async {
-                await confirmJob(jobId);
-                await deleteRiskSupport(jobId);
+                await confirmJob(jobId); // confirm the job in database
+                await deleteRiskSupport(
+                    jobId); // delete the risk and support plans
                 getJobs(widget.workerId, (List<dynamic> jobDetailList) {
+                  // update the job list to remove the completed job
                   setState(() {
                     jobList = jobDetailList;
                   });
                 });
                 Navigator.of(context).pop();
                 Flushbar(
+                  // show confirmation message of job completion
                   backgroundColor: Colors.black,
                   message: "Job Confirmed!",
                   duration: Duration(seconds: 4),
@@ -407,6 +412,7 @@ class WorkerJobState extends State<WorkerJob> {
     );
   }
 
+  // Convert the time string to minutes
   int stringTimeToMins(String time) {
     List<String> parts = time.split(':');
     int hours = int.parse(parts[0]);
@@ -414,9 +420,10 @@ class WorkerJobState extends State<WorkerJob> {
     return hours * 60 + minutes;
   }
 
+  // Show the risk and support plans for the job
   Future<void> showRiskSupportPlans(BuildContext context, String jobId) async {
-    List<Uint8List?> imgBytes = await getRiskSupport(jobId);
-
+    List<Uint8List?> imgBytes = await getRiskSupport(
+        jobId); // get the risk and support plans images from job id
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -431,7 +438,8 @@ class WorkerJobState extends State<WorkerJob> {
                   buttonSize: 50,
                   text: "Risk Assessment",
                   onPress: () {
-                    imageViewer(context, imgBytes[0]);
+                    imageViewer(context,
+                        imgBytes[0]); // pop-up to view the risk assessment plan
                   },
                 ),
               const SizedBox(height: 5),
@@ -440,7 +448,8 @@ class WorkerJobState extends State<WorkerJob> {
                   buttonSize: 50,
                   text: "Support Plans",
                   onPress: () {
-                    imageViewer(context, imgBytes[1]);
+                    imageViewer(context,
+                        imgBytes[1]); // pop-up to view the support plans
                   },
                 ),
             ],
@@ -458,6 +467,7 @@ class WorkerJobState extends State<WorkerJob> {
     );
   }
 
+  // Delete the risk and support plans for the job
   Future<void> deleteRiskSupport(String jobId) async {
     await dbhandler
         .child('Risk Support Plans')
@@ -477,10 +487,11 @@ class WorkerJobState extends State<WorkerJob> {
     });
   }
 
+  // Get the risk and support plans images for the job
   Future<List<Uint8List?>> getRiskSupport(String jobId) async {
     List<Uint8List?> result = [];
 
-    await dbhandler
+    await dbhandler // get the risk and support plans images for the job
         .child('Risk Support Plans')
         .orderByChild('job_id')
         .equalTo(jobId)
@@ -494,20 +505,21 @@ class WorkerJobState extends State<WorkerJob> {
         if (data != null) {
           var rSKey = data.keys.first;
           var rSData = data[rSKey];
-
+          // decode the base64 string to bytes
           Uint8List? riskImgBytes = base64Decode(rSData["risk_plans_img"]);
           Uint8List? supImgBytes = base64Decode(rSData["support_plans_img"]);
 
-          result = [riskImgBytes, supImgBytes];
+          result = [riskImgBytes, supImgBytes]; // return as a list to index
         }
       }
     });
-
     return result;
   }
 
+  // Pop-up to view the image
   Future<void> imageViewer(BuildContext context, Uint8List? byteImg) async {
-    if (byteImg == null) return;
+    // view the image in a pop-up
+    if (byteImg == null) return; // if no image return nothing
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -515,7 +527,7 @@ class WorkerJobState extends State<WorkerJob> {
           title: const Text('Selected Plan'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [Image.memory(byteImg)],
+            children: [Image.memory(byteImg)], // display the image
           ),
           actions: [
             TextButton(
@@ -530,32 +542,36 @@ class WorkerJobState extends State<WorkerJob> {
     );
   }
 
+  // Handle the click on the job based on the status
   void clicked(String jobId, bool assigned, String dateString, String endTime,
       bool riskSupport) {
-    DateTime today = DateTime.now();
-    DateTime date = DateFormat('dd-MM-yyyy').parse(dateString);
+    DateTime today = DateTime.now(); // get the current date
+    DateTime date =
+        DateFormat('dd-MM-yyyy').parse(dateString); // format date of job
     TimeOfDay currentTime = TimeOfDay.now();
-    String now = currentTime.format(context);
+    String now = currentTime.format(context); // fomat current time
     if (assigned == false) {
-      jobSelector(context, jobId);
+      jobSelector(context, jobId); // pop-up to accept or decline job
     } else if ((today.isAtSameMomentAs(date) &&
             (stringTimeToMins(endTime) > stringTimeToMins(now))) ||
         today.isAfter(date)) {
-      print("job over");
+      // check if the job is past completion date and time to confirm
       jobConfirmation(context, jobId);
     } else if (riskSupport) {
+      // check if the risk and support plans are available
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content:
+        content: // show loading message
             Text("Risk and Support Plans Loading, this may take a second!"),
       ));
       showRiskSupportPlans(context, jobId);
     } else {
-      // TO DO: error message nothing to do
+      // nothing to do
     }
   }
 
+  // View the company profile
   Future<void> profileViewer(BuildContext context, String userId) async {
-    dbhandler
+    dbhandler // search company id from job
         .child('Profiles')
         .orderByChild('user_id')
         .equalTo(userId)
@@ -581,11 +597,12 @@ class WorkerJobState extends State<WorkerJob> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ProfileView(
+                        // display the company profile
                         name: name,
                         imgPath: imgPath,
                         experience: "",
                         description: description,
-                        scale: 2)
+                        scale: 2) // display half scale to fit the pop-up
                   ],
                 ),
                 actions: [
@@ -612,7 +629,7 @@ class WorkerJobState extends State<WorkerJob> {
         appBar: AppBar(
           backgroundColor: const Color(0xffFCFAFC),
           title: const Padding(
-            padding: EdgeInsets.only(top: 30), // Add padding above the title
+            padding: EdgeInsets.only(top: 30),
             child: Center(
               child: DisplayText(
                   text: 'List of Current Jobs',
@@ -665,14 +682,15 @@ class WorkerJobState extends State<WorkerJob> {
                   child: ListView.builder(
                     itemCount: jobList.length,
                     itemBuilder: (context, index) {
-                      // Assuming each worker is represented as a Map
                       Map<String, dynamic> job = jobList[index];
                       return InkWell(
                         onTap: () async {
+                          // handle the click on the job
                           clicked(job['jobId'], job['assigned'], job['date'],
                               job['endTime'], job['riskSupport']);
                         },
                         onDoubleTap: () async {
+                          // double tap to view company profile
                           profileViewer(context, job['companyId']);
                         },
                         child: Container(
@@ -680,19 +698,19 @@ class WorkerJobState extends State<WorkerJob> {
                           padding:
                               const EdgeInsets.all(10), // space inside item box
                           decoration: BoxDecoration(
-                            color:
+                            color: // set the colour based on the job status
                                 pickColour(job['assigned'], job['riskSupport']),
                             border: Border.all(color: Colors.black),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
                             title: DisplayText(
-                                text:
-                                    "Job: ${index + 1} (Company ${job['company']})", //${job['workerId']})", TO DO PUT WORKER NAME
+                                text: // display company name
+                                    "Job: ${index + 1} (Company ${job['company']})",
                                 fontSize: 20,
                                 colour: const Color(0xffffffff)),
                             subtitle: DisplayText(
-                                text:
+                                text: // display job details
                                     "Date: ${job['date']} \nTime: ${job['startTime']} to ${job['endTime']} \nLocation: ${job['location']}",
                                 fontSize: 16,
                                 colour: const Color(0xfffcfcfc)),
@@ -707,6 +725,7 @@ class WorkerJobState extends State<WorkerJob> {
                   alignment: Alignment.centerRight,
                   margin: const EdgeInsets.only(top: 20, right: 30),
                   child: const HelpButton(
+                      // help button for user how to use page
                       message: 'Job colour meaning; \n'
                           '- Red: new job request, click to accept \n'
                           '- Blue: waiting for the company to add risk and support plans \n'

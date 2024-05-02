@@ -17,34 +17,41 @@ class WorkerSettings extends StatefulWidget {
 }
 
 class WorkerSettingsState extends State<WorkerSettings> {
+  // Firebase Authentication and Google Sign In to sign out
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   DatabaseReference dbhandler = FirebaseDatabase.instance.ref();
+
+  // Default values if the profile is empty
   String name = " First Last Name ";
   String imgPath = "default";
   int experience = 0;
   String description = "No Description";
-  final TextEditingController textController = TextEditingController();
+  final TextEditingController textController =
+      TextEditingController(); // Text controller for the text field
 
   @override
   void initState() {
     super.initState();
     setState(() {
+      // get profile details
       getProfile(widget.workerId);
     });
   }
 
+  // Sign out function
   Future<void> signOut() async {
     await _auth.signOut().then((_) {
-      //try the following
       _googleSignIn.signOut();
-      //try the following
 
       Navigator.push(
-          context, MaterialPageRoute(builder: (context) => const Login()));
+          // Navigate to the login page
+          context,
+          MaterialPageRoute(builder: (context) => const Login()));
     });
   }
 
+  // Get the profile of the worker from db
   Future<void> getProfile(String userId) async {
     dbhandler
         .child('Profiles')
@@ -70,6 +77,8 @@ class WorkerSettingsState extends State<WorkerSettings> {
     });
   }
 
+  // Update the profile of the worker with specific item and value
+  // item is db key to update and value is dynamic
   Future<void> updateProfile(String item, dynamic value) async {
     dbhandler
         .child('Profiles')
@@ -81,20 +90,20 @@ class WorkerSettingsState extends State<WorkerSettings> {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
-        print("profile works here");
         if (data != null) {
-          var profileKey = data.keys.first;
+          var profileKey = data.keys.first; // update profile
           await dbhandler.child('Profiles').child(profileKey).update({
             item: value,
           });
-          print("profile works here");
+          // profile works here
         }
       } else {
-        print("No Profile Found");
+        // No Profile Found
       }
     });
   }
 
+  // pop-up to update the image of gennder
   Future<void> genderChanger(BuildContext context, String value) async {
     String dropdownValue = value;
 
@@ -120,10 +129,10 @@ class WorkerSettingsState extends State<WorkerSettings> {
                     value: dropdownValue,
                     onChanged: (String? newValue) {
                       setState(() {
-                        dropdownValue = newValue!;
+                        dropdownValue = newValue!; // set the new value
                       });
                     },
-                    items: dropdownItems
+                    items: dropdownItems // map the items to the dropdown
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -142,12 +151,12 @@ class WorkerSettingsState extends State<WorkerSettings> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    // Call updateProfile function with the selected value
-                    await updateProfile("img", dropdownValue);
+                    await updateProfile(
+                        "img", dropdownValue); // update the profile db
 
                     Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("Gender Updated!"),
+                      content: Text("Gender Updated!"), // show message
                     ));
                   },
                   child: const Text('Change'),
@@ -160,6 +169,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
     );
   }
 
+  // pop-up to update the profile with the item and value ALL BUT IMAGE
   Future<void> profileChanger(
       BuildContext context, String title, String item, dynamic value) async {
     showDialog<void>(
@@ -188,11 +198,11 @@ class WorkerSettingsState extends State<WorkerSettings> {
                 if (item == "experience") {
                   value = int.parse(value);
                 }
-                await updateProfile(item, value);
+                await updateProfile(item, value); // update the profile db
                 textController.clear();
                 Navigator.of(context).pop(value);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text("$item Updated!"),
+                  content: Text("$item Updated!"), // show message
                 ));
               },
               child: const Text('Change'),
@@ -203,9 +213,10 @@ class WorkerSettingsState extends State<WorkerSettings> {
     );
   }
 
+  // Delete the worker from the database
   Future<void> deleteWorker(String workerId) async {
     dbhandler
-        .child('Worker')
+        .child('Worker') // delete worker
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
@@ -215,30 +226,29 @@ class WorkerSettingsState extends State<WorkerSettings> {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
         if (data != null) {
-          // Assuming there is only one entry, you can access it directly
           var workerKey = data.keys.first;
           dbhandler.child('Worker').child(workerKey).remove();
         }
       }
     });
-    dbhandler
+    dbhandler // delete all worker availabilitys
         .child('Availability')
         .orderByChild('worker_id')
         .equalTo(workerId)
         .onValue
-        .take(1)
-        .listen((event) async {
+        .listen((DatabaseEvent event) async {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic>? data =
             event.snapshot.value as Map<dynamic, dynamic>?;
         if (data != null) {
-          // Assuming there is only one entry, you can access it directly
-          var workerKey = data.keys.first;
-          dbhandler.child('Availability').child(workerKey).remove();
+          data.forEach((key, value) {
+            var availabilityKey = key;
+            dbhandler.child('Availability').child(availabilityKey).remove();
+          });
         }
       }
     });
-    dbhandler
+    dbhandler // delete all worker ability
         .child('Ability')
         .orderByChild('worker_id')
         .equalTo(workerId)
@@ -255,7 +265,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
         }
       }
     });
-    dbhandler
+    dbhandler // delete all worker profile
         .child('Profiles')
         .orderByChild('user_id')
         .equalTo(workerId)
@@ -274,6 +284,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
     });
   }
 
+  // Unassign all jobs from the worker
   Future<void> unassignJobs(String workerId) async {
     List<String> jobIdList = [];
 
@@ -330,7 +341,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
         appBar: AppBar(
           backgroundColor: const Color(0xffFCFAFC),
           title: const Padding(
-            padding: EdgeInsets.only(top: 20), // Add padding above the title
+            padding: EdgeInsets.only(top: 20),
             child: Center(
               child: DisplayText(
                   text: "Settings", fontSize: 36, colour: Colors.black),
@@ -346,6 +357,7 @@ class WorkerSettingsState extends State<WorkerSettings> {
                     children: [
               const SizedBox(height: 55),
               PushButton(
+                  // Change Name button
                   buttonSize: 70,
                   text: "Change Name",
                   onPress: () =>
@@ -353,44 +365,46 @@ class WorkerSettingsState extends State<WorkerSettings> {
               const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
-                  text: "Change Gender", ///////////////////// TO DO
-                  onPress: () =>
-                      genderChanger(context, imgPath)), //////////////// TO DO
+                  text: "Change Gender", // change genderimage button
+                  onPress: () => genderChanger(context, imgPath)),
               const SizedBox(height: 25),
               PushButton(
                   buttonSize: 70,
-                  text: "Change Experience",
+                  text: "Change Experience", // change experience button
                   onPress: () => profileChanger(context, "Years of Experience",
                       "experience", experience.toString())),
               const SizedBox(height: 25),
               PushButton(
-                  buttonSize: 70,
+                  buttonSize: 70, // change description button
                   text: "Change Description",
                   onPress: () => profileChanger(context, "About you summary",
                       "description", description)),
               const SizedBox(height: 25),
               PushButton(
+                // delete account button
                 buttonSize: 70,
                 text: "Delete Account",
                 onPress: () async => {
-                  setState(() {
-                    unassignJobs(widget.workerId);
-                    deleteWorker(widget.workerId);
+                  setState(() async {
+                    // delete account and assigned data
+                    await unassignJobs(widget.workerId);
+                    await deleteWorker(widget.workerId);
                   }),
-                  Navigator.push(context,
+                  // await _auth.signOut().then((_) { // sign out
+                  //   _googleSignIn.signOut();
+                  // }),
+                  Navigator.push(context, // navigate to login
                       MaterialPageRoute(builder: (context) => const Login())),
-                  //sign out
                 },
               ),
               const SizedBox(height: 25),
-              PushButton(
+              PushButton( // sign out button
                   buttonSize: 70, text: "Sign Out", onPress: () => signOut()),
-              // const SizedBox(height: 25),
               const SizedBox(height: 25),
               Container(
                 alignment: Alignment.centerRight,
                 margin: const EdgeInsets.only(top: 20, right: 30),
-                child: const HelpButton(
+                child: const HelpButton( // help button for settings
                     message: 'Select a button to change your profile\n\n'
                         'To remove your account click Delete Account \n\n'
                         'Click the Sign Out button to log out of your account',

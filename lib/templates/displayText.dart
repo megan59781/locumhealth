@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// template for the display text in the app to keep format
 class DisplayText extends StatelessWidget {
   final String text;
   final double fontSize;

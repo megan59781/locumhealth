@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fyp/templates/displayText.dart';
 
+// template for the profile view in the app
 class ProfileView extends StatelessWidget {
   final String name;
   final String imgPath;
@@ -13,7 +14,7 @@ class ProfileView extends StatelessWidget {
       required this.imgPath,
       required this.experience,
       required this.description,
-      required this.scale});
+      required this.scale}); // scale to alter pop up vs profile page view
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class ProfileView extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 100/scale,
-          backgroundImage: AssetImage('lib/images/$imgPath.png'),
+          backgroundImage: AssetImage('lib/images/$imgPath.png'), // image path
         ),
         const SizedBox(height: 20),
         DisplayText(text: name, fontSize: 30/scale, colour: Colors.black),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// template for the day button in availability page
 class DayButton extends StatefulWidget {
   final String text;
   final bool selected;
@@ -26,7 +27,6 @@ class _DayButtonState extends State<DayButton> {
         height: 80,
         width: 50,
         decoration: BoxDecoration(
-          //border: Border.all(color: Colors.blueGrey[300]!, width: 1),
           borderRadius: BorderRadius.circular(20.0),
           color: Colors.blueGrey[50],
           boxShadow: [
@@ -41,8 +41,6 @@ class _DayButtonState extends State<DayButton> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(35),
           child: Material(
-            // elevation: 5, // Adjust the elevation for the shadow effect
-            // shadowColor: Colors.blueGrey[800]!.withOpacity(0.5),
             color: Colors.blueGrey[50], // button color
             child: InkWell(
               onTap: () {
@@ -56,13 +54,13 @@ class _DayButtonState extends State<DayButton> {
                 children: <Widget>[
                   widget.selected
                       ? Icon(
-                          Icons.check_circle_outline,
+                          Icons.check_circle_outline, // green if selected
                           color: Colors.green[600],
                           size: 35,
                         )
                       : const Icon(
                           Icons.highlight_off_outlined,
-                          color: Color(0xFF280387),
+                          color: Color(0xFF280387), // purple if not selected 
                           size: 35,
                         ),
                   Text(
